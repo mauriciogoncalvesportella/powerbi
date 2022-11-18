@@ -1,0 +1,68 @@
+{
+  "name": "quasar-bi",
+  "version": "0.0.2",
+  "description": "Commerce Business Inteligence",
+  "productName": "bi",
+  "author": "Leonardo Valério Anastácio <leonardovalerio@live.com>",
+  "private": true,
+  "scripts": {
+    "lint": "eslint --ext .js,.ts,.vue ./",
+    "test": "echo \"No test specified\" && exit 0"
+  },
+  "dependencies": {
+    "apexcharts": "^3.27.1",
+    "axios": "^0.21.1",
+    "clear-cache": "^1.1.0",
+    "core-js": "^3.6.5",
+    "date-fns": "^2.22.1",
+    "date-fns-tz": "^1.1.4",
+    "fitty": "^2.3.5",
+    "lodash": "^4.17.21",
+    "mitt": "^3.0.0",
+    "nanoid": "^3.3.0",
+    "quasar": "^2.0.0",
+    "vue-class-component": "^8.0.0-rc.1",
+    "vue3-apexcharts": "^1.4.0",
+    "vuex": "^4.0.1"
+  },
+  "devDependencies": {
+    "@babel/eslint-parser": "^7.13.14",
+    "@babel/preset-typescript": "^7.18.6",
+    "@quasar/app": "^3.0.0",
+    "@quasar/extras": "^1.0.0",
+    "@types/jest": "^28.1.6",
+    "@types/lodash": "^4.14.172",
+    "@types/node": "^12.20.21",
+    "@typescript-eslint/eslint-plugin": "^4.16.1",
+    "@typescript-eslint/parser": "^4.16.1",
+    "@vue/devtools": "^6.1.4",
+    "electron": "^19.0.1",
+    "electron-packager": "^15.2.0",
+    "eslint": "^7.14.0",
+    "eslint-config-standard": "^16.0.2",
+    "eslint-plugin-import": "^2.19.1",
+    "eslint-plugin-jest": "^26.6.0",
+    "eslint-plugin-node": "^11.0.0",
+    "eslint-plugin-promise": "^5.1.0",
+    "eslint-plugin-vue": "^7.0.0",
+    "jest": "^28.1.3",
+    "ts-jest": "^28.0.7",
+    "workbox-webpack-plugin": "^6.0.0"
+  },
+  "browserslist": [
+    "last 10 Chrome versions",
+    "last 10 Firefox versions",
+    "last 4 Edge versions",
+    "last 7 Safari versions",
+    "last 8 Android versions",
+    "last 8 ChromeAndroid versions",
+    "last 8 FirefoxAndroid versions",
+    "last 10 iOS versions",
+    "last 5 Opera versions"
+  ],
+  "engines": {
+    "node": ">= 12.22.1",
+    "npm": ">= 6.13.4",
+    "yarn": ">= 1.21.1"
+  }
+}

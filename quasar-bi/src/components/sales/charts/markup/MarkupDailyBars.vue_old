@@ -1,0 +1,201 @@
+<template>
+  <chart-base
+    :title="accumulated ? 'Markup diário acumulado' : 'Markup diário'"
+    :apex-options="chart.options"
+    :apex-series="chart.series"
+    :loading="loading"
+    :no-data="noData"
+    :error="error"
+    :state-count="stateCount"
+    @data-point-selection="nextState"
+  >
+    <template
+      v-slot:filter
+    >
+      <q-btn
+        :label="accumulated ? 'Alterar para diário' : 'Alternar para acumulado'"
+        class="full-width"
+        icon="signal_cellular_alt"
+        unelevated
+        @click="changeAccumulated"
+      />
+      <!--team-list-api
+        :cds="cds"
+        :year-month-array="[idMesAno]"
+        @filter-by-teams="nextStateTeams"
+        @filter-by-sellers="nextStateSellers"
+      /-->
+      <team-list-api
+        v-if="type === 'team'"
+        :cds="cds"
+        :year-month-array="[yearMonth]"
+        @filter-by-teams="nextStateFilter('team', $event)"
+        @filter-by-sellers="nextStateFilter('seller', $event)"
+      />
+      <seller-list-api
+        v-else-if="cds.length > 1"
+        :cds="cds"
+        :year-month-array="[yearMonth]"
+        @filter="nextStateFilter('seller', $event)"
+      />
+    </template>
+
+    <template
+      v-slot:header
+    >
+      <q-scroll-area
+        v-show="!loading"
+        style="height: 38px"
+        class="full-width"
+        :thumb-style="{ right: '2px', borderRadius: '5px', width: '2px', height: '8px', opacity: .25 }"
+      >
+        <div
+          class="row no-wrap"
+        >
+          <!--year-month-chip
+            :year-month="yearMonth"
+            commit="sales/setYearMonth"
+          /-->
+          <year-month-chip
+            id="yearMonthChip"
+            :year-month="yearMonth"
+            @year-month-click="$emit('NextStateYearMonth', $event)"
+          />
+          <q-chip
+            v-for="cd in cds"
+            :key="`q-chip-${cd}`"
+            size="11.5px"
+            icon="groups"
+          >
+            {{ getLabel(cd) }}
+          </q-chip>
+        </div>
+      </q-scroll-area>
+    </template>
+  </chart-base>
+</template>
+
+<script lang="ts">
+import { defineComponent, PropType } from 'vue'
+import DailyBarsMixin from '../mixins/MixinDailyBars'
+import { DailyBarsDTO } from 'src/store/sales/sales.types'
+import ChartBase from 'src/components/ChartBase.vue'
+import YearMonthChip from 'src/components/YearMonthChip.vue'
+import TeamListApi from 'src/components/sales/TeamListApi.vue'
+import SellerListApi from 'src/components/sales/SellerListApi.vue'
+import { format } from 'date-fns'
+
+export default defineComponent({
+  components: {
+    YearMonthChip,
+    ChartBase,
+    TeamListApi,
+    SellerListApi
+  },
+
+  props: {
+    cds: {
+      type: Array as PropType<Array<number>>,
+      required: true
+    },
+    yearMonth: {
+      type: String,
+      required: true
+    },
+    accumulated: {
+      type: Boolean,
+      default: false
+    },
+    type: {
+      type: String as PropType<'seller' | 'team'>,
+      required: true
+    }
+  },
+
+  mixins: [DailyBarsMixin],
+
+  methods: {
+    getLabel (cd: number) {
+      if (this.type === 'seller') {
+        const map = this.$store.state.sales.sellersMap ?? new Map()
+        return map.get(cd)?.nmVendedor ?? 'Erro'
+      }
+
+      const map = this.$store.state.sales.teamsMap ?? new Map()
+      return map.get(cd)?.nmEquipe ?? 'Erro'
+    },
+
+    changeAccumulated () {
+      this.$emit('nextState', {
+        component: 'MarkupDailyBars',
+        props: {
+          cds: this.cds,
+          yearMonth: this.yearMonth,
+          accumulated: !this.accumulated,
+          type: this.type
+        }
+      })
+    },
+
+    nextStateFilter (type: 'seller' | 'team', cds: number[]) {
+      this.$emit('nextState', {
+        component: 'MarkupDailyBars',
+        props: {
+          cds,
+          yearMonth: this.yearMonth,
+          accumulated: this.accumulated,
+          type
+        }
+      })
+    },
+
+    nextState (event: any, chartContext: any, { dataPointIndex }: any) {
+      const dates = [
+        this.accumulated ? this.chartData.dates[0] : this.chartData.dates[dataPointIndex],
+        this.chartData.dates[dataPointIndex]
+      ]
+
+      this.$emit('nextState', {
+        component: 'MarkupResumeChart',
+        props: {
+          cds: this.cds,
+          yearMonth: this.yearMonth,
+          type: this.type,
+          initDay: dates[0],
+          endDay: dates[1]
+        }
+      })
+    }
+  },
+
+  created () {
+    const formatter = (num: number | string) => {
+      const n: number = typeof num === 'string' ? parseInt(num) : num
+      return `${n.toFixed(0)}%`
+    }
+
+    this.chart.options.yaxis.min = 0
+    this.chart.options.yaxis.labels.formatter = formatter
+    this.chart.options.tooltip.y.formatter = formatter
+    this.seriesValueTitle = 'Markup'
+    this.seriesGoalTitle = 'Meta'
+    this.chart.options.xaxis.type = 'datetime'
+    this.chart.options.xaxis.labels.formatter = (value: number): string => {
+      return format(new Date(value), 'dd')
+    }
+
+    this.getDataFunction = () => {
+      return this.$api.axios.get<DailyBarsDTO>('bi/sales/markup/daily-bars', {
+        params: {
+          cds: this.cds,
+          yearMonth: this.yearMonth,
+          type: this.type,
+          accumulated: this.accumulated
+        }
+      })
+    }
+
+    this.nextGetDataFunction = () => { return 0 }
+  }
+})
+</script>

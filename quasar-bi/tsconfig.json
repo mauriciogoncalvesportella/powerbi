@@ -1,0 +1,10 @@
+{
+  "strict": true,
+  "extends": "@quasar/app/tsconfig-preset",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "types": ["jest", "node"],
+    "experimentalDecorators": true,
+    "useDefineForClassFields": true
+  }
+}

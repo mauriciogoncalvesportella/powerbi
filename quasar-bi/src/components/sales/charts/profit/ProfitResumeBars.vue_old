@@ -1,0 +1,123 @@
+<template>
+  <chart-base
+    title="Lucro"
+    :apex-options="chart.options"
+    :apex-series="chart.series"
+    :loading="loading"
+    :no-data="noData"
+    :error="error"
+    :state-count="stateCount"
+    filter-disabled
+    @data-point-selection="nextState"
+  >
+    <template
+      v-slot:header
+    >
+      <q-scroll-area
+        v-show="!loading"
+        style="height: 38px"
+        class="full-width"
+        :thumb-style="{ right: '2px', borderRadius: '5px', width: '2px', height: '8px', opacity: .25 }"
+      >
+        <div
+          class="row no-wrap"
+        >
+          <year-month-chip
+            v-if="!initDay || !endDay"
+            :year-month="yearMonth"
+            commit="sales/setYearMonth"
+          />
+          <q-chip
+            v-else
+            icon="event"
+            size="11.5px"
+            :label="dateLabel"
+          />
+          <q-chip
+            v-for="cd in cds"
+            :key="`q-chip-${cd}`"
+            size="11.5px"
+            icon="groups"
+          >
+            {{ getLabel(cd) }}
+          </q-chip>
+        </div>
+      </q-scroll-area>
+    </template>
+  </chart-base>
+</template>
+
+<script lang="ts">
+import { defineComponent } from 'vue'
+import ResumeChartMixin from '../mixins/MixinResumeBars'
+import { ResumeBarsDTO } from 'src/store/sales/sales.types'
+import ChartBase from 'src/components/ChartBase.vue'
+import YearMonthChip from 'src/components/YearMonthChip.vue'
+
+export default defineComponent({
+  components: {
+    YearMonthChip,
+    ChartBase
+  },
+
+  mixins: [ResumeChartMixin],
+
+  methods: {
+    getLabel (cd: number) {
+      if (this.type === 'seller') {
+        const map = this.$store.state.sales.sellersMap ?? new Map()
+        return map.get(cd)?.nmVendedor ?? 'Erro'
+      }
+
+      const map = this.$store.state.sales.teamsMap ?? new Map()
+      return map.get(cd)?.nmEquipe ?? 'Erro'
+    },
+
+    nextState (event: any, chartContext: any, { dataPointIndex }: any) {
+      const cd = this.chartData.cds[dataPointIndex]
+      const type = this.chartData.types[dataPointIndex]
+
+      if (cd !== null && type !== null) {
+        if (type === 0) {
+          this.$emit('nextState', {
+            component: 'ProfitResumeBars',
+            props: {
+              cds: [cd],
+              yearMonth: this.yearMonth,
+              type: 'team',
+              initDay: this.initDay,
+              endDay: this.endDay
+            }
+          })
+        }
+      }
+    }
+  },
+
+  created () {
+    const formatter = (num: number | string) => {
+      const n: number = typeof num === 'string' ? parseInt(num) : num
+      return `${n.toFixed(0)}%`
+    }
+
+    this.chart.options.yaxis.labels.formatter = formatter
+    this.chart.options.tooltip.y.formatter = formatter
+    this.seriesValueTitle = 'Lucro'
+    this.seriesGoalTitle = 'Meta'
+
+    this.getDataFunction = async () => {
+      return await this.$api.axios.get<ResumeBarsDTO>('bi/sales/profit/resume-chart', {
+        params: {
+          cds: this.cds,
+          yearMonth: this.yearMonth,
+          type: this.type,
+          initDay: this.initDay,
+          endDay: this.endDay
+        }
+      })
+    }
+
+    this.nextGetDataFunction = () => { return 0 }
+  }
+})
+</script>
