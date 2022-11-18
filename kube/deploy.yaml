@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: quasar-bi
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: quasar-bi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quasar-bi
+spec:
+  selector:
+    matchLabels:
+      app: quasar-bi
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: quasar-bi
+    spec:
+      containers:
+      - name: quasar-bi
+        image: registry.digitalocean.com/datacompany/quasar-bi@{{quasar-bi_sha256}}
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nestjs-bi
+spec:
+  ports:
+  - port: 3000
+    targetPort: 3000
+  selector:
+    app: nestjs-bi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nestjs-bi
+spec:
+  selector:
+    matchLabels:
+      app: nestjs-bi
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: nestjs-bi
+    spec:
+      containers:
+      - name: nestjs-bi
+        image: registry.digitalocean.com/datacompany/nestjs-bi@{{nestjs-bi_sha256}}
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
