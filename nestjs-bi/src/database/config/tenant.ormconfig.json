@@ -1,0 +1,13 @@
+{
+  "type": "postgres",
+  "url": "postgresql://doadmin:data%40DATA%402019@localhost:5432/bi",
+  "schema": "ten_default",
+  "synchronize": false,
+  "logging": true,
+  "entities": ["src/database/entity/tenant/*{.js,.ts}"],
+  "migrations": ["src/database/migration/tenant/*{.js,.ts}"],
+  "cli": {
+    "entitiesDir": "src/database/entity/tenant",
+    "migrationsDir": "src/database/migration/tenant"
+  }
+}

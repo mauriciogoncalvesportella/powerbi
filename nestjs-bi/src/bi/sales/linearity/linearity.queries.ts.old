@@ -1,0 +1,197 @@
+import { Inject, Injectable } from "@nestjs/common";
+import {CadEquipeEntity} from "src/database/entity/tenant/cad_equipe.entity";
+import {RequestMetadata} from "src/shared/request-metadata.provider";
+import {Connection, EntityManager} from "typeorm";
+import { ILinearityQueries, QueryResultResumeLinearity, QueryResultPotentialLinearity, QueryResultPerCustomerLinearity } from './linearity.generator'
+
+@Injectable()
+export class LinearityQueries implements ILinearityQueries {
+  private manager: EntityManager
+  constructor (
+    @Inject('CONNECTION')
+    private connection: Connection,
+    private requestMetadata: RequestMetadata
+  ) { 
+    this.manager = connection.manager
+  }
+
+  get tenant () {
+    return `ten_${this.connection.name}`
+  }
+
+  private async getSellerOrTeam (cd: number, type: 'seller' | 'team') {
+    const sellerCode = type === 'seller' ? cd : -1
+    const teamId = type === 'team'
+      ? (await this.manager.findOneOrFail(CadEquipeEntity, cd)).idEquipe
+      : 'impossible'
+
+    return {
+      sellerCode,
+      teamId
+    }
+  }
+  
+  public async resume (cd: number, type: 'seller' | 'team', yearMonthInterval: string[]): Promise<QueryResultResumeLinearity[]> {
+    const [yearMonth0, yearMonth1] = yearMonthInterval
+    const { sellerCode, teamId } = await this.getSellerOrTeam(cd, type)
+    const [query, parameters] = this.connection.driver.escapeQueryWithParameters(
+      /*
+      `
+      SELECT
+        count::int,
+        count(*)::int as total_customers
+        FROM (
+          SELECT "cdCliente", count(*)
+            FROM (
+              SELECT "idMesAno", "cdCliente"
+                FROM ${this.tenant}.vd_pedidos vp
+                JOIN ${this.tenant}.cad_vendedor cv on cv.cd = vp."cdVendedor"
+                JOIN ${this.tenant}.cad_equipe ce on ce.cd = cv."cdEquipe" and (ce."idEquipe" similar to :teamId OR cv."cd" = :sellerCode)
+              WHERE "idMesAno" between :yearMonth0 and :yearMonth1
+              GROUP BY "idMesAno", "cdCliente"
+            ) t
+          GROUP BY "cdCliente"
+        ) t2
+      GROUP BY count
+      ORDER BY count DESC
+      */
+      `
+      SELECT
+        count::int,
+        count(*)::int as total_customers
+        FROM (
+          SELECT "cdCliente", case when newest = true then 0 else count(*) end
+            FROM (
+              SELECT "idMesAno", (${this.tenant}.extract_year_month(cc."dtCriacao") between :yearMonth0 and :yearMonth1) as newest, "cdCliente"
+                FROM ${this.tenant}.vd_pedidos vp
+                join ${this.tenant}.cad_cliente cc on cc.cd = vp."cdCliente"
+                JOIN ${this.tenant}.cad_vendedor cv on cv.cd = vp."cdVendedor"
+                join ${this.tenant}.cad_equipe ce on ce.cd = cv."cdEquipe" and (ce."idEquipe" similar to :teamId OR cv."cd" = :sellerCode)
+              WHERE vp."fgSituacao" in (1,2,4,5) and "idMesAno" between :yearMonth0 and :yearMonth1
+              GROUP BY "idMesAno", cc."dtCriacao", "cdCliente"
+            ) t
+          GROUP BY "cdCliente", newest
+        ) t2
+      GROUP BY count
+      ORDER BY count desc
+      `,
+      { yearMonth0, yearMonth1, sellerCode, teamId: `%${teamId}%` },
+      {}
+    )
+    return await this.manager.query(query, parameters)
+  }
+
+  
+  public async resumePotential (cd: number, type: 'seller' | 'team', yearMonthInterval: string[]): Promise<QueryResultPotentialLinearity[]> {
+    const [yearMonth0, yearMonth1] = yearMonthInterval
+    const { sellerCode, teamId } = await this.getSellerOrTeam(cd, type)
+    const [query, parameters] = this.connection.driver.escapeQueryWithParameters(
+    /*
+    `
+    SELECT
+      count,
+      sum(total)::float as amount,
+      sum(average)::float as average,
+      (5*sum(total)/count)::float as foreseen
+      FROM (
+        SELECT
+          count(*),
+          sum(total) as total,
+          sum(total)/count(*) as average
+          FROM (
+            SELECT "cdCliente" as cd, "idMesAno", sum("vlProdutos") as total
+            FROM ${this.tenant}.vd_pedidos vp
+                JOIN ${this.tenant}.cad_vendedor cv on cv.cd = vp."cdVendedor"
+                JOIN ${this.tenant}.cad_equipe ce on ce.cd = cv."cdEquipe" and (ce."idEquipe" similar to :teamId OR cv."cd" = :sellerCode)
+            WHERE "idMesAno" between :yearMonth0 and :yearMonth1
+            GROUP BY "cdCliente", "idMesAno"
+          ) t
+        GROUP BY t.cd
+        ORDER BY cd
+      ) t2
+    GROUP BY count
+    ORDER BY count DESC
+    `
+    */
+    `
+    SELECT
+      count,
+      sum(total)::float as amount,
+      sum(average)::float as average,
+      case when t2.count = 0 then 0 else (5 * sum(total)/count)::float end as foreseen
+      FROM (
+        SELECT
+          case when newest = true then 0 else count(*) end as count,
+          sum(total) as total,
+          sum(total)/count(*) as average
+          FROM (
+            select
+              "cdCliente" as cd,
+              "idMesAno",
+              (${this.tenant}.extract_year_month(cc."dtCriacao") between :yearMonth0 and :yearMonth1) as newest,
+              sum("vlProdutos") as total
+            FROM ${this.tenant}.vd_pedidos vp
+              join ${this.tenant}.cad_cliente cc on cc.cd = vp."cdCliente"
+                join ${this.tenant}.cad_vendedor cv on cv.cd = vp."cdVendedor"
+                JOIN ${this.tenant}.cad_equipe ce on ce.cd = cv."cdEquipe" and (ce."idEquipe" similar to :teamId OR cv."cd" = :sellerCode)
+            where vp."fgSituacao" in (1,2,4,5) and "idMesAno" between :yearMonth0 and :yearMonth1
+            GROUP BY "cdCliente", "idMesAno", cc."dtCriacao"
+          ) t
+        GROUP BY t.cd, newest
+        ORDER BY cd
+      ) t2
+    GROUP BY count
+    ORDER BY count DESC
+    `,
+    { yearMonth0, yearMonth1, sellerCode, teamId: `%${teamId}%` },
+    {})
+    return await this.manager.query(query, parameters)
+  }
+  
+  public async perCustomer (cd: number, type: 'seller' | 'team', yearMonthInterval: string[], countFilter: number, sortColumn: string, sortType: string, offset: number, limit: number): Promise<QueryResultPerCustomerLinearity[]> {
+    const [yearMonth0, yearMonth1] = yearMonthInterval
+    const { sellerCode, teamId } = await this.getSellerOrTeam(cd, type)
+    const currentYearMonth = await this.requestMetadata.getYearMonth(new Date())
+    const [query, parameters] = this.connection.driver.escapeQueryWithParameters(
+    `
+    SELECT *
+      FROM (
+        SELECT
+          cd as code,
+          t."nmRazao" as customer,
+          t."dtCriacao" as create_date,
+          t."fgStatus" as status,
+          case when t.newest then 0 else coalesce (count(*) FILTER (WHERE t."idMesAno" != :currentYearMonth), 0) end as count,
+          coalesce (sum(total) FILTER (WHERE t."idMesAno" != :currentYearMonth), 0) as amount,
+          coalesce (array_agg(t."idMesAno") FILTER (WHERE t."idMesAno" != :currentYearMonth), '{}') as year_month,
+          coalesce (sum(total) FILTER (WHERE t."idMesAno" = :currentYearMonth), 0) as current
+          FROM (
+            select
+              cc.cd,
+              cc."nmRazao",
+              cc. "fgStatus",
+              (${this.tenant}.extract_year_month(cc."dtCriacao") between :yearMonth0 and :yearMonth1) as newest,
+              "idMesAno",
+              sum("vlProdutos") as total,
+              cc."dtCriacao"
+            FROM ${this.tenant}.vd_pedidos vp
+              JOIN ${this.tenant}.cad_cliente cc on cc.cd = vp."cdCliente"
+              JOIN ${this.tenant}.cad_vendedor cv on cv.cd = vp."cdVendedor"
+              JOIN ${this.tenant}.cad_equipe ce on ce.cd = cv."cdEquipe" and (ce."idEquipe" similar to :teamId OR cv."cd" = :sellerCode)
+            WHERE "idMesAno" between :yearMonth0 and :yearMonth1
+            GROUP BY cc.cd, "idMesAno", cc."dtCriacao"
+            ORDER BY "idMesAno"
+          ) t
+        GROUP BY t.cd, t."nmRazao", t.newest, t."dtCriacao", t."fgStatus"
+      ) t2
+    WHERE (:countFilter = -1 or count = :countFilter) and not (count = 0 and current > 0)
+    ORDER BY ${sortColumn} ${sortType}
+    OFFSET :offset
+    LIMIT :limit
+    `,
+    { yearMonth0, yearMonth1, sellerCode, teamId: `${teamId}.%`, countFilter, offset, limit, currentYearMonth },
+    {})
+
+    return await this.manager.query(query, parameters)
+  }
+}

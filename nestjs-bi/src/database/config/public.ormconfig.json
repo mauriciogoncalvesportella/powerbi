@@ -1,0 +1,13 @@
+{
+  "type": "postgres",
+  "url": "postgresql://doadmin:data%40DATA%402019@localhost:5432/bi",
+  "schema": "public",
+  "synchronize": false,
+  "logging": true,
+  "entities": ["src/database/entity/public/*{.js,.ts}"],
+  "migrations": ["src/database/migration/public/*{.js,.ts}"],
+  "cli": {
+    "entitiesDir": "src/database/entity/public",
+    "migrationsDir": "src/database/migration/public"
+  }
+}
