@@ -52,7 +52,7 @@ export class LinearityQueries implements ILinearityQueries {
             JOIN ${this.tenant}.cad_cliente cc on cc.cd = vp."cdCliente"
             --JOIN ${this.tenant}.cad_vendedor cv on cv.cd = vp."cdVendedor"
             JOIN ${this.tenant}.cad_vendedor cv on cc."cdVendedor" = cv.cd
-            JOIN ${this.tenant}.cad_equipe ce on ce.cd = cv."cdEquipe" and (ce."idEquipe" similar to :teamId or cv."cd" = :sellerCode)
+            JOIN ${this.tenant}.cad_equipe ce on ce.cd = cv."cdEquipe" and (ce."idEquipe" similar to :teamId OR cv."cd" = :sellerCode OR vp."cdVendedor2" = :sellerCode)
       WHERE vp."fgSituacao" in (1,2,4,5) and "idMesAno" between :yearMonth0 and :yearMonth1
       GROUP BY "idMesAno", cc."dtCriacao", "cdCliente", "idFantasia", "fgStatus", cv."idVendedor", cv."cd"
       ORDER BY "cdCliente"

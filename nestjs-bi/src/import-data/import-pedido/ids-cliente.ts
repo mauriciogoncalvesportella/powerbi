@@ -1,7 +1,6 @@
-import {Inject, Injectable} from "@nestjs/common";
+import {Injectable} from "@nestjs/common";
 import {CadClienteEntity} from "src/database/entity/tenant/cad_cliente.entity";
-import { UnitOfWorkEntity } from "src/database/unit-of-work/uow.provider";
-import {Connection} from "typeorm";
+import {UnitOfWorkEntity} from "src/database/unit-of-work/uow.provider";
 import {IImportData} from "../import-data.interface";
 import {ImportDataService} from "../import-data.service";
 import {IDSVendedor} from "../import-empresa/ids-vendedor";

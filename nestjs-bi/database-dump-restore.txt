@@ -1,2 +1,2 @@
 pg_dump -h db-postgresql-sfo2-31502-do-user-7196057-0.b.db.ondigitalocean.com -U doadmin -Ft -p 25060 -f candy -n ten_candy_comercio -d bi
-pg_restore -U doadmin -d bi -1 candy
+pg_restore -U doadmin -d bi -1 candy --no-owner

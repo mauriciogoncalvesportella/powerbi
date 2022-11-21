@@ -1,6 +1,6 @@
 {
   "type": "postgres",
-  "url": "postgresql://doadmin:data%40DATA%402019@localhost:5432/bi",
+  "url": "postgresql://admin:admin@localhost:5432/bi",
   "schema": "ten_default",
   "synchronize": false,
   "logging": true,

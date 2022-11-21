@@ -1,11 +1,10 @@
-import {Inject, Injectable} from "@nestjs/common";
-import {CadCondicaoPagamentoEntity} from "src/database/entity/tenant/cad_codicao_pagamento.entity";
+import {Injectable} from "@nestjs/common";
 import {VdPedidoEntity} from "src/database/entity/tenant/vd_pedido.entity";
 import { UnitOfWorkEntity } from "src/database/unit-of-work/uow.provider";
-import {Connection, Entity} from "typeorm";
 import {IImportData} from "../import-data.interface";
 import {ImportDataService} from "../import-data.service";
 import {IDSEmpresa} from "../import-empresa/ids-empresa";
+import { IDSVendedor } from "../import-empresa/ids-vendedor";
 import {IDSCliente} from "./ids-cliente";
 import {IDSCondicaoPagamento} from "./ids-condicao-pagamento";
 import {IDSTipoPedido} from "./ids-tipo-pedido";
@@ -20,6 +19,7 @@ export class IDSPedido extends ImportDataService<MyEntity> implements IImportDat
     private idsCondicaoPagamento: IDSCondicaoPagamento,
     private idsCliente: IDSCliente,
     private idsEmpresa: IDSEmpresa,
+    private idsVendedor: IDSVendedor
   ) {
     super(uow, VdPedidoEntity)
   }
@@ -30,6 +30,11 @@ export class IDSPedido extends ImportDataService<MyEntity> implements IImportDat
       await this.idsCondicaoPagamento.has(entity.cdCondicaoPagamento)
       await this.idsCliente.has(entity.cdCliente)
       await this.idsEmpresa.has(entity.cdEmpresa)
+      await this.idsVendedor.has(entity.cdVendedor)
+      if (entity.cdVendedor2 != undefined) {
+        await this.idsVendedor.has(entity.cdVendedor2)
+      }
+
       // entity.idMesAno = await this.idsEmpresa.getAdjustedYearMonth(entity.dtEntrega)
       await this.repository.save(entity)
     }

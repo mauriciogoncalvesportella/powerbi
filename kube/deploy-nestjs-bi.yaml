@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nestjs-bi
+spec:
+  selector:
+    matchLabels:
+      app: nestjs-bi
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: nestjs-bi
+    spec:
+      containers:
+      - name: nestjs-bi
+        image: registry.digitalocean.com/datacompany/nestjs-bi@sha256:3731abe24c90e1e24ed27aa95008ec1a4614143f8f92d619a23e6be40e137371
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000

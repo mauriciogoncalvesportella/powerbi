@@ -53,7 +53,7 @@ export class ProfitQueries implements IProfitQueries {
           JOIN ${this.tenant}.cad_vendedor cv on true
           JOIN ${this.tenant}.cad_equipe ce on ce.cd = cv."cdEquipe"
           LEFT JOIN ${this.tenant}.vd_pedidos vp on vp."dtEmissao" = data and vp."cdVendedor" = cv.cd AND vp."idMesAno" = :yearMonth AND vp."fgSituacao" IN (1,2,4,5)
-        where (cv.cd = :sellerCode or ce."idEquipe" like :teamId||'%')
+          where (cv.cd = :sellerCode or vp."cdVendedor2" = :sellerCode or ce."idEquipe" like :teamId||'%')
       GROUP BY data
       ORDER BY data
       `,
@@ -125,18 +125,46 @@ export class ProfitQueries implements IProfitQueries {
       UNION
       
       SELECT
-        cv.cd AS code,
-        cv."nmVendedor" AS label,
-        SUM("vlCusto")::float AS cost_value,
-        SUM("vlLucro")::float AS profit_value,
-        COALESCE(sum(case when ("fgSituacao" = 1) then "vlProdutos" else 0 end), 0)::float as not_billed,
-        COALESCE(sum(case when ("fgSituacao" IN (2,4,5)) then "vlProdutos" else 0 end), 0)::float as billed,
-        COUNT(*) AS order_count,
-        'seller' AS type
-        FROM ${this.tenant}.vd_pedidos vp
-          JOIN ${this.tenant}.cad_vendedor cv ON cv.cd = vp."cdVendedor"
-      WHERE (vp."idMesAno" = :yearMonth OR vp."dtEmissao" between :date0 and :date1) and vp."fgSituacao" IN (1,2,4,5) AND cv."cdEquipe" = :teamCode
-      GROUP BY cv.cd, cv."nmVendedor") result
+        code,
+        label,
+        SUM(cost_value),
+        SUM(profit_value),
+        SUM(not_billed),
+        SUM(billed),
+        SUM(order_count),
+        type
+      FROM
+        (SELECT
+          cv.cd AS code,
+          cv."nmVendedor" AS label,
+          SUM("vlCusto")::float AS cost_value,
+          SUM("vlLucro")::float AS profit_value,
+          COALESCE(sum(case when ("fgSituacao" = 1) then "vlProdutos" else 0 end), 0)::float as not_billed,
+          COALESCE(sum(case when ("fgSituacao" IN (2,4,5)) then "vlProdutos" else 0 end), 0)::float as billed,
+          COUNT(*) AS order_count,
+          'seller' AS type
+          FROM ${this.tenant}.vd_pedidos vp
+            JOIN ${this.tenant}.cad_vendedor cv ON cv.cd = vp."cdVendedor"
+        WHERE (vp."idMesAno" = :yearMonth OR vp."dtEmissao" between :date0 and :date1) and vp."fgSituacao" IN (1,2,4,5) AND cv."cdEquipe" = :teamCode
+        GROUP BY cv.cd, cv."nmVendedor"
+
+        UNION
+
+        SELECT
+          cv.cd AS code,
+          cv."nmVendedor" AS label,
+          SUM("vlCusto")::float AS cost_value,
+          SUM("vlLucro")::float AS profit_value,
+          COALESCE(sum(case when ("fgSituacao" = 1) then "vlProdutos" else 0 end), 0)::float as not_billed,
+          COALESCE(sum(case when ("fgSituacao" IN (2,4,5)) then "vlProdutos" else 0 end), 0)::float as billed,
+          COUNT(*) AS order_count,
+          'seller' AS type
+          FROM ${this.tenant}.vd_pedidos vp
+            JOIN ${this.tenant}.cad_vendedor cv ON cv.cd = vp."cdVendedor2"
+        WHERE (vp."idMesAno" = :yearMonth OR vp."dtEmissao" between :date0 and :date1) and vp."fgSituacao" IN (1,2,4,5) AND cv."cdEquipe" = :teamCode
+        GROUP BY cv.cd, cv."nmVendedor") sellerResult
+      GROUP BY code, label, type
+    ) result
     ORDER BY billed DESC
     `,
     { yearMonth: yearMonthParam, teamCode, teamId, date0: dateParam[0], date1: dateParam[1] },

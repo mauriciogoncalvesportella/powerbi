@@ -63,7 +63,7 @@ export namespace GetOrderTypeOrm {
     public execute(qb: SelectQueryBuilder<Raw>): void {
       const params = this.params as GetOrder.FromSellerStrategy
       const { sellerCode, param } = params
-      qb.andWhere('vendedor.cd = :sellerCode', { sellerCode })
+      qb.andWhere('vendedor.cd = :sellerCode OR pedido."cdVendedor2" = :sellerCode', { sellerCode })
       if (param.type === 'yearMonth') {
         qb.andWhere('pedido.idMesAno = :yearMonth', { yearMonth: param.yearMonthParam })
       } else {

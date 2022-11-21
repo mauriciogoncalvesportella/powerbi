@@ -56,6 +56,11 @@ export class VdPedidoEntity {
   @IsInt()
   cdVendedor: number
 
+  @Column('int', { nullable: true })
+  @Index('IDX_VDPEDIDOS_CDVENDEDOR_2')
+  @IsOptional()
+  cdVendedor2: number
+
   // @ManyToOne(() => CadClienteEntity, cadClienteEntity => cadClienteEntity.cd)
   // @JoinTable({ name: 'cdCliente' })
   // @Index()

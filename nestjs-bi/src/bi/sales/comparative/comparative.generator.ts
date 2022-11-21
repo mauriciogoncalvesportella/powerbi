@@ -1,7 +1,5 @@
 import {Inject, Injectable} from "@nestjs/common";
 import {addMonths, format} from "date-fns";
-import {RequestMetadata} from "src/shared/request-metadata.provider";
-import {ArrayUtils} from "src/utils/array.utils";
 import {Connection} from "typeorm";
 import {ComparativeQueries} from "./comparative.queries";
 import {createComparativeSerie, ComparativeDTO, ComparativeSerieDTO, IComparativeGenerator, IComparativeQueries, IComparativeStrategy, IComparativeStrategyObject, QueryResultComparative} from "./comparative.types";

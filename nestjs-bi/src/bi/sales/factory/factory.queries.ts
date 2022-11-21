@@ -81,7 +81,7 @@ export class FactoryQueries implements IFactoryQueries {
 
                 : `join ${this.tenant}.cad_fabrica cf on cf.cd = vpp."cdFabrica"`
               }
-          where vp."idMesAno" = :yearMonth and cv.cd = :cd
+          where vp."idMesAno" = :yearMonth and (cv.cd = :cd or vp."cdVendedor2" = :cd) and vp."fgSituacao" in (1,2,4,5)
           group by vpp."cdPedido", ${this.table}.cd, ${this.table}."${this.column}"
         ) t
       group by t.code, t.label
@@ -90,6 +90,7 @@ export class FactoryQueries implements IFactoryQueries {
       { yearMonth, cd },
       {}
     )
+    console.log(query)
     return await this.manager.query(query, parameters)
   }
 
@@ -115,7 +116,7 @@ export class FactoryQueries implements IFactoryQueries {
           JOIN ${this.tenant}.cad_produto cp ON cp.cd = vpp."cdProduto"
           JOIN ${this.tenant}.cad_vendedor cv ON cv.cd = vp."cdVendedor"
           JOIN ${this.tenant}.cad_equipe ce ON ce.cd = cv."cdEquipe"
-      WHERE (ce."idEquipe" similar to :teamId OR cv.cd = :sellerCode) AND vp."idMesAno" = :yearMonth AND cp."${this.productCodeColumn}" = :menuCode
+      WHERE (ce."idEquipe" similar to :teamId OR cv.cd = :sellerCode OR vp."cdVendedor2" = :sellerCode) AND vp."idMesAno" = :yearMonth AND cp."${this.productCodeColumn}" = :menuCode
       GROUP BY cp.cd, cp."idProduto", cp."nmProduto"
       ORDER BY amount DESC
       `,
