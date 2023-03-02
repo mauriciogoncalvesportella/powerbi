@@ -1,15 +1,15 @@
-import {Body, Controller, ParseArrayPipe, Post, UseGuards, UseInterceptors} from "@nestjs/common";
-import {JwtGuard} from "src/auth/jwt.guard";
-import {Role} from "src/auth/role.decorator";
-import {CadClienteEntity} from "src/database/entity/tenant/cad_cliente.entity";
-import {CadCondicaoPagamentoEntity} from "src/database/entity/tenant/cad_codicao_pagamento.entity";
-import {CadTipoPedidoEntity} from "src/database/entity/tenant/cad_tipo_pedido.entity";
-import {VdPedidoEntity} from "src/database/entity/tenant/vd_pedido.entity";
-import { UnitOfWorkInterceptor } from "src/database/unit-of-work/uow.interceptor";
-import {IDSCliente} from "./ids-cliente";
-import {IDSCondicaoPagamento} from "./ids-condicao-pagamento";
-import {IDSPedido} from "./ids-pedido";
-import {IDSTipoPedido} from "./ids-tipo-pedido";
+import {Body, Controller, Delete, Param, ParseArrayPipe, Post, UseGuards, UseInterceptors} from "@nestjs/common"
+import {JwtGuard} from "src/auth/jwt.guard"
+import {Role} from "src/auth/role.decorator"
+import {CadClienteEntity} from "src/database/entity/tenant/cad_cliente.entity"
+import {CadCondicaoPagamentoEntity} from "src/database/entity/tenant/cad_codicao_pagamento.entity"
+import {CadTipoPedidoEntity} from "src/database/entity/tenant/cad_tipo_pedido.entity"
+import {VdPedidoEntity} from "src/database/entity/tenant/vd_pedido.entity"
+import {UnitOfWorkInterceptor} from "src/database/unit-of-work/uow.interceptor"
+import {IDSCliente} from "./ids-cliente"
+import {IDSCondicaoPagamento} from "./ids-condicao-pagamento"
+import {IDSPedido} from "./ids-pedido"
+import {IDSTipoPedido} from "./ids-tipo-pedido"
 
 @UseGuards(JwtGuard)
 @UseInterceptors(UnitOfWorkInterceptor)
@@ -41,5 +41,10 @@ export class ImportPedidoController {
   @Post('pedido')
   async addPedido (@Body(new ParseArrayPipe({ items: VdPedidoEntity })) data: VdPedidoEntity[]) {
     await this.idsPedido.importData(data)
+  }
+
+  @Delete('pedido/:cd')
+  async deletePedido (@Param('cd') cdPedido: number) {
+    await this.idsPedido.deletePedido(cdPedido)
   }
 }

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import {ImportPedidoModule} from '../import-pedido/import-pedido.module';
 import {IDSCategoria} from './ids-categoria';
 import {IDSFabrica} from './ids-fabrica';
@@ -10,7 +10,7 @@ import {ImportProdutoController} from './import-produto.controller';
 
 @Module({
   imports: [
-    ImportPedidoModule,
+    forwardRef(() => ImportPedidoModule),
   ],
   providers: [
     IDSSubtabela,
@@ -26,6 +26,7 @@ import {ImportProdutoController} from './import-produto.controller';
   exports: [
     IDSProduto,
     IDSFabrica,
+    IDSPedidoProduto
   ],
 })
 export class ImportProdutoModule {}

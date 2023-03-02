@@ -47,8 +47,8 @@ export class ProfitQueries implements IProfitQueries {
       SELECT TO_CHAR(data, 'yyyy-mm-dd') AS date,
           COALESCE(sum("vlCusto"), 0::float) as cost_value,
           COALESCE(sum("vlLucro"), 0::float) as profit_value,
-          COALESCE(sum(case when (vp."fgSituacao" = 1) then vp."vlProdutos" else 0 end), 0)::float as not_billed,
-          COALESCE(sum(case when (vp."fgSituacao" IN (2,4,5)) then vp."vlProdutos" else 0 end), 0)::float as billed
+          COALESCE(sum(case when (vp."fgSituacao" = 1) then (vp."vlProdutos" - vp."vlDesconto") else 0 end), 0)::float as not_billed,
+          COALESCE(sum(case when (vp."fgSituacao" IN (2,4,5)) then (vp."vlProdutos" - vp."vlDesconto") else 0 end), 0)::float as billed
         FROM (select generate_series(:date0::timestamp, :date1::timestamp, '1 day') as data) as datas
           JOIN ${this.tenant}.cad_vendedor cv on true
           JOIN ${this.tenant}.cad_equipe ce on ce.cd = cv."cdEquipe"
@@ -79,8 +79,8 @@ export class ProfitQueries implements IProfitQueries {
           SELECT TO_CHAR(data, 'yyyy-mm-dd') AS date,
               COALESCE(sum("vlCusto"), 0::float) as cost_value,
               COALESCE(sum("vlLucro"), 0::float) as profit_value,
-              COALESCE(sum(case when (vp."fgSituacao" = 1) then vp."vlProdutos" else 0 end), 0)::float as not_billed,
-              COALESCE(sum(case when (vp."fgSituacao" IN (2,4,5)) then vp."vlProdutos" else 0 end), 0)::float as billed
+              COALESCE(sum(case when (vp."fgSituacao" = 1) then (vp."vlProdutos" - vp."vlDesconto") else 0 end), 0)::float as not_billed,
+              COALESCE(sum(case when (vp."fgSituacao" IN (2,4,5)) then (vp."vlProdutos" - vp."vlDesconto") else 0 end), 0)::float as billed
             FROM (select generate_series(:date0::timestamp, :date1::timestamp, '1 day') as data) as datas
               JOIN ${this.tenant}.cad_vendedor cv on true
               JOIN ${this.tenant}.cad_equipe ce on ce.cd = cv."cdEquipe"
@@ -108,8 +108,8 @@ export class ProfitQueries implements IProfitQueries {
         ce."nmEquipe" AS label,
         sum(t."vlCusto")::float AS cost_value,
         sum(t."vlLucro")::float AS profit_value,
-        COALESCE(sum(case when (t."fgSituacao" = 1) then t."vlProdutos" else 0 end), 0)::float as not_billed,
-        COALESCE(sum(case when (t."fgSituacao" IN (2,4,5)) then t."vlProdutos" else 0 end), 0)::float as billed,
+        COALESCE(sum(case when (t."fgSituacao" = 1) then (t."vlProdutos" - t."vlDesconto") else 0 end), 0)::float as not_billed,
+        COALESCE(sum(case when (t."fgSituacao" IN (2,4,5)) then (t."vlProdutos" - t."vlDesconto") else 0 end), 0)::float as billed,
         count(*) AS order_count,
         'team' AS type
         FROM (
@@ -139,8 +139,8 @@ export class ProfitQueries implements IProfitQueries {
           cv."nmVendedor" AS label,
           SUM("vlCusto")::float AS cost_value,
           SUM("vlLucro")::float AS profit_value,
-          COALESCE(sum(case when ("fgSituacao" = 1) then "vlProdutos" else 0 end), 0)::float as not_billed,
-          COALESCE(sum(case when ("fgSituacao" IN (2,4,5)) then "vlProdutos" else 0 end), 0)::float as billed,
+          COALESCE(sum(case when ("fgSituacao" = 1) then ("vlProdutos" - "vlDesconto") else 0 end), 0)::float as not_billed,
+          COALESCE(sum(case when ("fgSituacao" IN (2,4,5)) then ("vlProdutos" - "vlDesconto") else 0 end), 0)::float as billed,
           COUNT(*) AS order_count,
           'seller' AS type
           FROM ${this.tenant}.vd_pedidos vp
@@ -155,8 +155,8 @@ export class ProfitQueries implements IProfitQueries {
           cv."nmVendedor" AS label,
           SUM("vlCusto")::float AS cost_value,
           SUM("vlLucro")::float AS profit_value,
-          COALESCE(sum(case when ("fgSituacao" = 1) then "vlProdutos" else 0 end), 0)::float as not_billed,
-          COALESCE(sum(case when ("fgSituacao" IN (2,4,5)) then "vlProdutos" else 0 end), 0)::float as billed,
+          COALESCE(sum(case when ("fgSituacao" = 1) then ("vlProdutos" - "vlDesconto") else 0 end), 0)::float as not_billed,
+          COALESCE(sum(case when ("fgSituacao" IN (2,4,5)) then ("vlProdutos" - "vlDesconto") else 0 end), 0)::float as billed,
           COUNT(*) AS order_count,
           'seller' AS type
           FROM ${this.tenant}.vd_pedidos vp

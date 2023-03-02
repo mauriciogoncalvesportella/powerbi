@@ -34,7 +34,7 @@ function cjmDisableSellerMarkup (to: any, from: any, next: any) {
 }
 
 function cjmUser9999OnlyLinearity (to: any, from: any, next: any) {
-  if (user.value?.cdEmpresaPublic === 40) {
+  if (user.value?.cdEmpresaPublic === 40 || user.value?.cdEmpresaPublic === 71) {
     if (user.value?.cdVendedor === 9999) {
       return next({ name: 'dashboard-linearity' })
     }

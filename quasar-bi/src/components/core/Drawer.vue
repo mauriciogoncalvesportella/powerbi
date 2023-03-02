@@ -137,6 +137,15 @@ export default defineComponent({
         items.value = items.value.filter(item => item.id === 'linearity')
       }
     }
+    // Fim
+
+    // Santa Gas
+    if (auth.user.value?.cdEmpresaPublic === 71) {
+      if (auth.user.value.cdVendedor === 9999) {
+        items.value = items.value.filter(item => item.id === 'linearity')
+      }
+    }
+    // Fim
 
     const toggleLeftDrawer = () => {
       if (quasar.platform.is.mobile || quasar.screen.lt.md) {

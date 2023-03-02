@@ -1,4 +1,4 @@
-import {Injectable} from "@nestjs/common";
+import {Inject, Injectable, OnModuleInit, forwardRef} from "@nestjs/common";
 import {VdPedidoEntity} from "src/database/entity/tenant/vd_pedido.entity";
 import { UnitOfWorkEntity } from "src/database/unit-of-work/uow.provider";
 import {IImportData} from "../import-data.interface";
@@ -8,6 +8,7 @@ import { IDSVendedor } from "../import-empresa/ids-vendedor";
 import {IDSCliente} from "./ids-cliente";
 import {IDSCondicaoPagamento} from "./ids-condicao-pagamento";
 import {IDSTipoPedido} from "./ids-tipo-pedido";
+import { IDSPedidoProduto } from "../import-produto/ids-pedido-produto";
 
 type MyEntity = VdPedidoEntity
 
@@ -19,7 +20,8 @@ export class IDSPedido extends ImportDataService<MyEntity> implements IImportDat
     private idsCondicaoPagamento: IDSCondicaoPagamento,
     private idsCliente: IDSCliente,
     private idsEmpresa: IDSEmpresa,
-    private idsVendedor: IDSVendedor
+    private idsVendedor: IDSVendedor,
+    private idsPedidoProduto: IDSPedidoProduto
   ) {
     super(uow, VdPedidoEntity)
   }
@@ -38,5 +40,10 @@ export class IDSPedido extends ImportDataService<MyEntity> implements IImportDat
       // entity.idMesAno = await this.idsEmpresa.getAdjustedYearMonth(entity.dtEntrega)
       await this.repository.save(entity)
     }
+  }
+
+  public async deletePedido (cd: number) {
+    await this.idsPedidoProduto.deletePedidoProdutoFromPedido(cd)
+    await this.repository.delete(cd)
   }
 }

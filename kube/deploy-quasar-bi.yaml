@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nestjs-bi
+  name: quasar-bi
 spec:
   selector:
     matchLabels:
-      app: nestjs-bi
+      app: quasar-bi
   replicas: 1
   template:
     metadata:
       labels:
-        app: nestjs-bi
+        app: quasar-bi
     spec:
       containers:
-      - name: nestjs-bi
-        image: registry.digitalocean.com/datacompany/quasar-bi@{{nestjs-bi_sha256}}
+      - name: quasar-bi
+        image: registry.digitalocean.com/datacompany/quasar-bi@{{quasar-bi_sha256}}
         imagePullPolicy: Always
         ports:
-        - containerPort: 3000
+        - containerPort: 80

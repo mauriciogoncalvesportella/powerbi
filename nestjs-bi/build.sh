@@ -1,23 +1,31 @@
 #!/bin/bash
 
-printf ">>>>> Building image <<<<<\n\n"
-buildah bud -t nestjs-bi .
-buildah tag -t nestjs-bi registry.digitalocean.com/datacompany/nestjs-bi
+set -e
 
-printf "\n>>>>> Uploading image to registry <<<<<\n\n"
-buildah push registry.digitalocean.com/datacompany/nestjs-bi
+build_nestjsbi(){
+  echo "[nestjs] building image"
+  buildah bud -t nestjs-bi . > /dev/null
+  buildah tag nestjs-bi registry.digitalocean.com/datacompany/nestjs-bi > /dev/null
 
-printf "\n>>>>> Getting image sha256 <<<<<\n\n"
-repository_list=$(doctl registry repository list-v2)
-sha256nest=$(echo "$repository_list" | awk '$1=="nestjs-bi"{print $2}')
-sha256quasar=$(echo "$repository_list" | awk '$1=="quasar-bi"{print $2}')
-echo "nestjs-bi = $sha256nest"
-echo "quasar-bi = $sha256quasar"
+  echo "[nestjs] uploading image"
+  buildah push registry.digitalocean.com/datacompany/nestjs-bi > /dev/null
 
-printf "\n>>>>> Generating yaml <<<<<\n\n"
-yaml="$(cat ../kube/deploy.yaml | sed "s/{{nestjs-bi_sha256}}/$sha256nest/g")"
-yaml="$(echo "$yaml" | sed "s/{{quasar-bi_sha256}}/$sha256quasar/g")"
-printf "OK!\n"
+  echo "[nestjs] ok!"
+}
 
-printf "\n>>>>> Deploying to kubernetes <<<<<\n\n"
-echo "$yaml" | kubectl apply -f -
+deploy(){
+  echo "[deploy] updating images sha256"
+  repository_list=$(doctl registry repository list-v2)
+  sha256nest=$(echo "$repository_list" | awk '$1=="nestjs-bi"{print $2}')
+  echo "[deploy] nestjs-bi = $sha256nest"
+
+  echo "[deploy] generating yaml file"
+  yaml="$(cat ../kube/deploy-nestjs-bi.yaml | sed "s/{{nestjs-bi_sha256}}/$sha256nest/g")"
+
+  echo "[deploy] deploying to kubernetes"
+  echo "$yaml" | kubectl apply -f -
+}
+
+build_nestjsbi &
+wait
+deploy

@@ -1,21 +1,30 @@
 #!/bin/bash
 set -e
 
-printf ">>>>> Building image <<<<<\n\n"
-buildah bud -t quasar-bi .
-buildah tag quasar-bi registry.digitalocean.com/datacompany/quasar-bi
+build_quasarbi(){
+  echo "[quasar-bi] building image"
+  buildah bud -t quasar-bi . > /dev/null
+  buildah tag quasar-bi registry.digitalocean.com/datacompany/quasar-bi > /dev/null
 
-printf "\n>>>>> Uploading image to registry <<<<<\n\n"
-buildah push registry.digitalocean.com/datacompany/quasar-bi
+  echo "[quasar-bi] uploading image"
+  buildah push registry.digitalocean.com/datacompany/quasar-bi > /dev/null
 
-printf "\n>>>>> Getting image sha256 <<<<<\n\n"
-repository_list=$(doctl registry repository list-v2)
-sha256quasar=$(echo "$repository_list" | awk '$1=="quasar-bi"{print $2}')
-echo "quasar-bi = $sha256quasar"
+  echo "[quasar-bi] ok!"
+}
 
-printf "\n>>>>> Generating yaml <<<<<\n\n"
-yaml="$(cat ./deploy.yaml | sed "s/{{quasar-bi_sha256}}/$sha256quasar/g")"
-printf "OK!\n"
+deploy(){
+  echo "[deploy] updating images sha256"
+  repository_list=$(doctl registry repository list-v2)
+  sha256quasar=$(echo "$repository_list" | awk '$1=="quasar-bi"{print $2}')
 
-printf "\n>>>>> Deploying to kubernetes <<<<<\n\n"
-echo "$yaml" | kubectl apply -f -
+  echo "[deploy] quasar-bi = $sha256quasar"
+  echo "[deploy] generating yaml file"
+  yaml="$(cat ../kube/deploy-quasar-bi.yaml | sed "s/{{quasar-bi_sha256}}/$sha256quasar/g")"
+
+  echo "[deploy] deploying to kubernetes"
+  echo "$yaml" | kubectl apply -f -
+}
+
+build_quasarbi &
+wait
+deploy
