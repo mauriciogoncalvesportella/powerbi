@@ -45,6 +45,28 @@ export class RegistryEmpresaService {
     const connection = await this.dbService.getConnection(schema)
     await connection.runMigrations()
     await connection.close()
+    await publicConn.query(`GRANT USAGE ON SCHEMA ten_${schema} TO readaccess`)
+    await publicConn.query(`GRANT SELECT ON ALL TABLES IN SCHEMA ten_${schema} TO readaccess`)
+    await publicConn.query(`ALTER DEFAULT PRIVILEGES IN SCHEMA ${schema} GRANT SELECT ON TABLES TO readaccess`)
+
+    /*
+    await publicConn.query(`
+      DO $do$
+      DECLARE
+          sch text;
+      BEGIN
+          FOR sch IN SELECT nspname FROM pg_namespace
+          LOOP
+              if sch like 'ten_%' then
+              EXECUTE format($$ GRANT USAGE ON SCHEMA %I TO readaccess $$, sch);
+                EXECUTE format($$ GRANT SELECT ON ALL TABLES IN SCHEMA %I TO readaccess; $$, sch);
+                EXECUTE format($$ ALTER DEFAULT PRIVILEGES IN SCHEMA %I GRANT SELECT ON TABLES TO readaccess; $$, sch);
+            end if;
+          END LOOP;
+      END;
+      $do$;
+    `)
+    */
   }
 
   async registry (registryDTO: RegistryDTO) {

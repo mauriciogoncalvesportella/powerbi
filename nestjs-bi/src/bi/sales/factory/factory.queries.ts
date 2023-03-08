@@ -90,7 +90,7 @@ export class FactoryQueries implements IFactoryQueries {
       { yearMonth, cd },
       {}
     )
-    console.log(query)
+
     return await this.manager.query(query, parameters)
   }
 
