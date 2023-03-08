@@ -106,7 +106,7 @@ export const useResumeBars = <T extends IBaseResumeChart>(
       }
 
       hooks?.afterGetDataFunction?.(chartData.value, chart.value)
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
       error.value = `Erro ${err?.response?.status ?? 'interno'}`
     } finally {

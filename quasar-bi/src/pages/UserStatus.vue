@@ -264,7 +264,7 @@ export default defineComponent({
       error.value = true
       try {
         users.value = (await apiProvider.axios.get('user-status/all')).data
-      } catch (err) {
+      } catch (err: any) {
         error.value = true
       } finally {
         loading.value = false
@@ -294,7 +294,7 @@ export default defineComponent({
           message: `Vendedor ${user.name} foi ${user.active ? 'ativado' : 'desativado'} com sucesso`,
           color: 'green'
         })
-      } catch (err) {
+      } catch (err: any) {
         Notify.create('Erro ao tentar ativar/desativar')
       } finally {
         loadingActiveOrDeactive.value = -1
@@ -321,7 +321,7 @@ export default defineComponent({
           user.passwordCreated = true
         }
         Notify.create({ color: 'green', message: 'Senha alterada com sucesso' })
-      } catch (err) {
+      } catch (err: any) {
         Notify.create({ color: 'red', message: 'Erro ao trocar a senha' })
       } finally {
         loadingPassword.value = false

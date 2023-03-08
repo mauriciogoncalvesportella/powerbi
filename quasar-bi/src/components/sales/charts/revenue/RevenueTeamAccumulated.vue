@@ -259,7 +259,7 @@ export default class RevenueTeamAccumulated extends Vue.with(Props) {
       } else {
         this.noData = true
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
       this.error = `Erro ${err?.response?.status ?? 'interno'}`
     } finally {

@@ -44,7 +44,7 @@ export class IDSPedidoProduto extends ImportDataService<MyEntity> implements IIm
 
       try {
         await this.repository.save(entity)
-      } catch (err) {
+      } catch (err: any) {
         throw err
       }
     }

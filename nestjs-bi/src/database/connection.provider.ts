@@ -18,7 +18,7 @@ export default {
         try {
           var jwt = token.split(' ')[1]
           var auth = jwtService.decode(jwt) as BaseAuth
-        } catch (err) {
+        } catch (err: any) {
           throw new InternalServerErrorException(err.message ?? err)
         }
 

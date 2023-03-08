@@ -91,7 +91,7 @@ export const useSimpleBars = <T extends IBaseChart>(
       if (nextGetDataFunction) {
         nextGetDataFunction(chartData.value)
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
       error.value = `Erro ${err?.response?.status ?? 'interno'}`
     } finally {

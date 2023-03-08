@@ -16,7 +16,7 @@ const actions: ActionTree<AuthStateInterface, StateInterface> = {
       commit('setLoginError', undefined)
       apiProvider.setAuthorization(response.data.jwt)
       await router.push({ name: 'dashboard' })
-    } catch (err) {
+    } catch (err: any) {
       if (axios.isAxiosError(err) && [400, 401].includes(err.response?.status ?? -1)) {
         const status = err.response?.status
         commit('setLoginError', status === 401 ? 'Usuário ou senha inválido(s)' : 'E-mail e senha requerido')

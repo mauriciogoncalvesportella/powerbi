@@ -13,7 +13,7 @@ const actions: ActionTree<SalesStateInterface, StateInterface> = {
       // await new Promise(resolve => setTimeout(resolve, 2000))
       const data = (await apiProvider.axios.get<TeamTree>('bi/sales/equipe/tree')).data
       commit('setEquipeTree', data)
-    } catch (err) {
+    } catch (err: any) {
       const message = `Erro ${err?.response?.status ?? 'interno'}`
       commit('setError', { key: 'getEquipeTree', value: message })
     } finally {
@@ -27,7 +27,7 @@ const actions: ActionTree<SalesStateInterface, StateInterface> = {
       commit('setLoading', { key: 'getTeams', value: true })
       const data = (await apiProvider.axios.get('bi/sales/equipe/own-teams')).data
       commit('setTeams', data)
-    } catch (err) {
+    } catch (err: any) {
       const message = err?.response?.message ?? 'Erro'
       commit('setError', { key: 'getTeams', value: message })
     } finally {
@@ -41,7 +41,7 @@ const actions: ActionTree<SalesStateInterface, StateInterface> = {
       commit('setLoading', { key: 'getSellers', value: true })
       const { entities: data } = (await apiProvider.axios.get('bi/sales/equipe/own-sellers')).data
       commit('setSellers', data)
-    } catch (err) {
+    } catch (err: any) {
       const message = err?.response?.message ?? 'Erro'
       commit('setError', { key: 'getSellers', value: message })
     } finally {

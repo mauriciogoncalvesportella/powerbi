@@ -28,7 +28,7 @@ export class UserAuthService {
       if (!(await CadUsuarioPublicEntity.comparePassword(password, user.idSenha))) {
         throw new Error()
       }
-    } catch (err) {
+    } catch (err: any) {
       throw new UnauthorizedException('Invalid credentials')
     }
     return user

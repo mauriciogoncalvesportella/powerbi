@@ -24,7 +24,7 @@ export class UserAuthController {
         loginId,
         password: data.password
       })
-    } catch (err) {
+    } catch (err: any) {
       throw new UnauthorizedException('invalid login')
     }
   }

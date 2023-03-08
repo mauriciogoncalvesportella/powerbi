@@ -25,7 +25,7 @@ export class OrderInfoTypeormService implements IOrderInfoService {
   }
 
   public async getOrderList(params: GetOrder.BaseStrategy): Promise<GetOrder.OrderInfo[]> {
-    const orders = this.manager.createQueryBuilder<GetOrderTypeOrm.Raw>(VdPedidoEntity, 'pedido')
+    const ordersQueryBuilder = this.manager.createQueryBuilder<GetOrderTypeOrm.Raw>(VdPedidoEntity, 'pedido')
       .innerJoinAndMapOne('pedido.empresa', CadEmpresaEntity, 'empresa', 'pedido.cdEmpresa = empresa.cd')
       .innerJoinAndMapOne('pedido.cond_pgto', CadCondicaoPagamentoEntity, 'cond_pgto', 'pedido.cdCondicaoPagamento = cond_pgto.cd')
       .innerJoinAndMapOne('pedido.vendedor', CadVendedorEntity, 'vendedor', 'pedido.cdVendedor = vendedor.cd')
@@ -37,9 +37,10 @@ export class OrderInfoTypeormService implements IOrderInfoService {
       .andWhere('pedido.fgSituacao IN (1, 2, 4, 5)')
 
     const strategy = GetOrderTypeOrm.electStrategy(params)
-    strategy.execute(orders)
-    orders.orderBy('pedido.dtEmissao', 'DESC')
-    const raw = await orders.getMany()
+    strategy.execute(ordersQueryBuilder)
+    ordersQueryBuilder.orderBy('pedido.dtEmissao', 'DESC')
+
+    const raw = await ordersQueryBuilder.getMany()
 
     return raw.map(order => GetOrderTypeOrm.map(order))
   }

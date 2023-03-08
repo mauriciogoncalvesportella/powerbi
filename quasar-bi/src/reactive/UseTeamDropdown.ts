@@ -41,7 +41,7 @@ const getData = async (): Promise<DropdownNodeDTO | undefined> => {
       }
     })
     return data
-  } catch (err) {
+  } catch (err: any) {
     error.value = err.response.status
   } finally {
     loading.value = false

@@ -128,7 +128,7 @@ export const useDailyBars = <T extends IBaseDailyChart>(
       }
 
       hooks?.afterGetDataFunction?.(chartData.value, chart.value)
-    } catch (err) {
+    } catch (err: any) {
       error.value = `Erro ${err?.response?.status ?? 'interno'}`
       console.error(err)
     } finally {

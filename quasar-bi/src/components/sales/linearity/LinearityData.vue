@@ -102,7 +102,7 @@ export default defineComponent({
               loadedAll.value = true
             }
             data.value.push(...values)
-          } catch (err) {
+          } catch (err: any) {
             error.value = true
           } finally {
             loading.value = false

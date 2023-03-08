@@ -74,7 +74,7 @@ const getData = async (cd: number): Promise<{ parentNode?: NodeTree, childNodes:
   try {
     loading.value = true
     return await teamsSellersFromTeam(cd)
-  } catch (err) {
+  } catch (err: any) {
     error.value = 'Erro ao carregar lista de times e vendedores'
     return {
       childNodes: []

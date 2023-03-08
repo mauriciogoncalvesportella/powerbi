@@ -20,7 +20,7 @@ export class RegistryEmpresaService {
   private async registrySchema (schema: string) {
     try {
       await this.uwoEntity.query(`CREATE SCHEMA ten_${schema}`)
-    } catch (err) {
+    } catch (err: any) {
       throw new HttpException({
         message: `${schema} already exists`,
         error: 'Query Failed Error',
@@ -69,7 +69,7 @@ export class RegistryEmpresaService {
 
     try {
       await this.createTenantDatabase(idEmpresa)
-    } catch (err) {
+    } catch (err: any) {
       throw new RegistryTenantDatabaseError(err.message ?? err)
     }
 

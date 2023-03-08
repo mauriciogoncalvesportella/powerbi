@@ -54,7 +54,7 @@ const runMigrations = async () => {
       }
 
       console.log(schema, 'continue')
-    } catch (err) {
+    } catch (err: any) {
       console.log(schema, err.message)
       const cadMigrationLog: CadMigrationLog = logRepository.create({
         id: schema,

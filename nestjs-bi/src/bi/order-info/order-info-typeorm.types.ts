@@ -28,7 +28,7 @@ export namespace GetOrderTypeOrm {
 
   export abstract class BaseStrategy {
     params: GetOrder.BaseStrategy;
-    abstract execute (qb: SelectQueryBuilder<Raw>): void;
+    abstract execute (qb: SelectQueryBuilder<Raw>): SelectQueryBuilder<Raw>;
   }
 
   export function electStrategy (params: GetOrder.BaseStrategy): BaseStrategy {
@@ -45,12 +45,13 @@ export namespace GetOrderTypeOrm {
       this.params = params
     }
 
-    public execute(qb: SelectQueryBuilder<Raw>): void {
+    public execute(qb: SelectQueryBuilder<Raw>) {
       const params = this.params as GetOrder.FromCustomerStrategy
       const { customerCode, startYearMonth, endYearMonth } = params
       qb
         .andWhere('cliente.cd = :customerCode', { customerCode })
         .andWhere('pedido.idMesAno BETWEEN :startYearMonth AND :endYearMonth', { startYearMonth, endYearMonth })
+      return qb
     }
   }
 
@@ -60,10 +61,11 @@ export namespace GetOrderTypeOrm {
       this.params = params
     }
 
-    public execute(qb: SelectQueryBuilder<Raw>): void {
+    public execute (qb: SelectQueryBuilder<Raw>) {
       const params = this.params as GetOrder.FromSellerStrategy
       const { sellerCode, param } = params
-      qb.andWhere('vendedor.cd = :sellerCode OR pedido."cdVendedor2" = :sellerCode', { sellerCode })
+      qb.andWhere('(vendedor.cd = :sellerCode OR pedido."cdVendedor2" = :sellerCode)', { sellerCode })
+
       if (param.type === 'yearMonth') {
         qb.andWhere('pedido.idMesAno = :yearMonth', { yearMonth: param.yearMonthParam })
       } else {
@@ -72,6 +74,8 @@ export namespace GetOrderTypeOrm {
           endDate: param.dateParam[1]
         })
       }
+
+      return qb
     }
   }
 

@@ -276,7 +276,7 @@ export default class RevenueTeamDailyComparative extends Vue.with(Props) {
       } else {
         this.noData = true
       }
-    } catch (err) {
+    } catch (err: any) {
       this.error = `Erro ${err?.response?.status ?? 'interno'}`
     } finally {
       this.loading = false
