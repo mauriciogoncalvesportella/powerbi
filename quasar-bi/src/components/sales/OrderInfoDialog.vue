@@ -96,7 +96,7 @@
             >
               <q-expansion-item
                 group="somegroup"
-                :class="index % 2 === 0 ? 'bg-grey-3' : ''"
+                :class="getRowColor(index, item.status)"
               >
                 <template
                   v-slot:header
@@ -234,6 +234,11 @@ export default defineComponent({
         .finally(() => { loading.value = false })
     }
 
+    const getRowColor = (index: number, orderStatus: number) => {
+      const colors = orderStatus !== 1 ? ['bg-gray-3', ''] : ['bg-orange-3', 'bg-orange-2']
+      return colors[index % 2]
+    }
+
     return {
       strategy,
       show,
@@ -241,7 +246,8 @@ export default defineComponent({
       open,
       loading,
       baseParams,
-      error
+      error,
+      getRowColor
     }
   }
 })
