@@ -14,7 +14,7 @@
       v-slot:filter
     >
       <q-btn
-        :label="`Usar meta meta ${goalType === 'proportional' ? 'mensal' : 'proporcional'}`"
+        :label="`Usar meta ${goalType === 'proportional' ? 'mensal' : 'proporcional'}`"
         class="full-width"
         unelevated
         @click="onChangeGoalType"

@@ -110,14 +110,32 @@ export default class ChartManager extends Vue.with(Props) {
     }
   }
 
-  nextState (state: ChartState) {
+  /**
+   * Adiciona um novo estado à pilha de estados `states` do ChartManager
+   *
+   * @param state - estado a ser adicionado com o parâmetro `override`,
+   *                que quando ativado, substitui o estado de um mesmo
+   *                gráfico (state.component)
+   */
+  nextState (state: ChartState & { override?: boolean }) {
     // this.$emit('next-state', state)
-    ++this.index
-    state.props.stateCount = this.index
-    this.states.push(state)
+    const override = state.override
+    delete state.override
+
+    const foundStateIndex = this.states.findIndex(item => item.component === state.component)
+    if (override && foundStateIndex !== -1) {
+      const foundState = this.states[foundStateIndex]
+      foundState.component = state.component
+      foundState.props = state.props
+      foundState.props.stateCount = foundStateIndex
+    } else {
+      ++this.index
+      state.props.stateCount = this.index
+      this.states.push(state)
+    }
+
     // @ts-ignore
     this.$nextTick(() => { this.$refs.chart.updateProps() })
-    // this.updateChartComponent()
   }
 
   newState (state: ChartState) {

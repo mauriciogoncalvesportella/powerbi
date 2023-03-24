@@ -29,6 +29,7 @@ export interface IProfitQueries {
 
 // Controller dependencies
 export interface DailyProfitDTO extends IBaseDailyChart {
+  prospect: number[]
   billed: number[]
   not_billed: number[]
 }
