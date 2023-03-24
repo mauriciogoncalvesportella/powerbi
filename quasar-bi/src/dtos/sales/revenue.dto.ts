@@ -15,6 +15,7 @@ export interface IBaseResumeChart extends IBaseChart {
 }
 
 export interface RevenueDailyDTO extends IBaseDailyChart {
+  prospect: number[],
   billed: number[],
   not_billed: number[]
 }

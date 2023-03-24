@@ -15,20 +15,78 @@ export class ProfitGenerator implements IProfitGenerator {
     @Inject(ProfitQueries)
     private queries: IProfitQueries,
     private metadata: RequestMetadata,
-    private goal: ProfitGoalGenerator
+    private goal: ProfitGoalGenerator,
+    private requestMetadata: RequestMetadata
   ) {}
 
   async daily (cd: number, type: 'team' | 'seller', yearMonth: string, cumulative: boolean, strategy: IProfitStrategy): Promise<DailyProfitDTO> {
-    const queryResult = cumulative
-      ? await this.queries.dailyCumulative(cd, type, yearMonth)
-      : await this.queries.daily(cd, type, yearMonth)
+    /*
+      Quando cumulativo é necessário o valor de `queryResultRegular`. Então,
+      em todos os casos os valores cumulativo e normal são buscados do banco
+      de dados
+    */
+    const queryResultRegular = await this.queries.daily(cd, type, yearMonth) 
+    const queryResultCumulative = await this.queries.dailyCumulative(cd, type, yearMonth)
+    const queryResult = cumulative ? queryResultCumulative : queryResultRegular
+
     const dates = _.map(queryResult, 'date')
     const monthlyGoal = type === 'team'
       ? await this.goal.teamGoal(cd, yearMonth)
       : await this.goal.sellerGoal(cd, yearMonth)
     const goal_values: number[] = strategy.executeDailyGoal(monthlyGoal, dates, cumulative)
+    const prospect = queryResult.map(item => item.billed + item.not_billed)
+
+    /*
+      Inicio do cálculo do prospect (expectativa), apenas para gráfico
+      cumulativo e quando está no mês atual 
+    */
+    const currentYearMonth = await this.requestMetadata.getYearMonth(new Date())
+    if (cumulative && currentYearMonth === yearMonth) {
+      let prospectBeginIndex = -1
+      let totalRevenue = 0
+      let prospectCurrentSum = 0
+
+      /*
+        Busca o indice do último dia do mês faturado (prospectBeginIndex) e
+        reaproveita a iteração para calcular o primeiro valor do prospect
+        (prospectCurrentSum) e o valor total de faturamento (totalRevenue)
+      */
+      for (let i = queryResultRegular.length - 1; i >= 0; i--) {
+        const currentBilled = queryResultRegular[i].billed
+        const currentNotBilled = queryResultRegular[i].not_billed
+        const revenue = currentBilled + currentNotBilled
+
+        if (revenue > 0) {
+          if (prospectBeginIndex == -1) {
+            prospectBeginIndex = i 
+            prospectCurrentSum = (queryResultCumulative[i].billed + queryResultCumulative[i].not_billed)
+          }
+          totalRevenue += revenue
+        }
+      }
+
+      /*
+        Em `totalOccurrencesRevenue` é calculado o total de dias comerciais,
+        esse número é necessário para calcular a média do faturamento
+      */
+      const interval = [new Date(dates[0]), addDays(new Date(dates[prospectBeginIndex]), 1)]
+      const totalOccurrencesRevenue = differenceInBusinessDays(interval[1], interval[0])
+
+
+      if (prospectBeginIndex !== -1) {
+        const revenueMean = totalRevenue / totalOccurrencesRevenue
+        for (let i = prospectBeginIndex; i < queryResultRegular.length; i++) {
+          const dayOfWeek = getDay(new Date(dates[i]))
+          if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+            prospectCurrentSum += revenueMean
+          }
+          prospect[i] = prospectCurrentSum
+        }
+      }
+    }
 
     return {
+      prospect,
       dates: _.map(queryResult, 'date'),
       billed: _.map(queryResult, 'billed'),
       not_billed: _.map(queryResult, 'not_billed'),

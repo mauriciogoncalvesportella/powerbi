@@ -1,7 +1,7 @@
 <template>
   <chart-base
     ref="chartComponent"
-    title="Faturamento Diário"
+    :title="title"
     :apex-options="chart.options"
     :apex-series="chart.series"
     :loading="(loading || externLoading) && !externNoData"
@@ -15,20 +15,31 @@
       v-if="yearMonth && type"
       v-slot:filter
     >
-      <q-btn
-        :label="accumulated ? 'Alternar para diário' : 'Alternar para acumulado'"
-        class="full-width"
-        :icon="accumulated ? 'bar_chart' : 'signal_cellular_alt'"
-        unelevated
-        @click="toAccumulated"
-      />
-      <!--team-list-api
-        v-if="type === 'team'"
-        :cds="codes"
-        :year-month-array="[yearMonth]"
-        @filter-by-teams="nextState('team', $event)"
-        @filter-by-sellers="nextState('seller', $event)"
-      /-->
+      <div
+        class="column"
+      >
+        <q-btn
+          :label="accumulated ? 'Alternar para diário' : 'Alternar para acumulado'"
+          :icon="accumulated ? 'bar_chart' : 'signal_cellular_alt'"
+          unelevated
+          @click="toAccumulated"
+        />
+        <q-btn-group
+          v-if="accumulated && isCurrentYearMonth"
+          spread
+        >
+          <q-btn
+            label="Meta"
+            :disable="!prospect"
+            @click="changeProspect(false)"
+          />
+          <q-btn
+            label="Expectativa"
+            :disable="prospect"
+            @click="changeProspect(true)"
+          />
+        </q-btn-group>
+      </div>
     </template>
 
     <template
@@ -47,14 +58,6 @@
             :year-month="yearMonth"
             @year-month-click="$emit('NextStateYearMonth', $event)"
           />
-          <!--q-chip
-            v-for="cd in codes"
-            :key="`v-chip-${cd}`"
-            size="11.5px"
-            :icon="type === 'team' ? 'groups' : 'person'"
-          >
-            {{ type === 'team' ? getTeamName(cd) : getSellerName(cd) }}
-          </q-chip-->
         </div>
       </q-scroll-area>
     </template>
@@ -77,6 +80,7 @@ import { RevenueDailyDTO } from 'src/dtos/sales/revenue.dto'
 import { getCssVar } from 'quasar'
 import { NumberUtils } from 'src/utils/number.utils'
 import { GetOrderListFromSeller, GlobalOrderInfoDialog } from 'src/reactive/UseGlobalDialogs'
+import { useAuth } from 'src/reactive/UseAuth'
 
 export default defineComponent({
   components: {
@@ -92,6 +96,7 @@ export default defineComponent({
     yearMonth: { type: String, required: false },
     type: { type: String, required: false },
     accumulated: { type: Boolean, default: false },
+    prospect: { type: Boolean, default: false },
     stateCount: { type: Number, default: 0 },
     externLoading: { type: Boolean, default: false },
     externNoData: { type: Boolean, default: false }
@@ -100,6 +105,7 @@ export default defineComponent({
   setup (props, { emit }) {
     const $store = useStore()
     const chartComponent = ref(null) as Ref<any>
+    const isCurrentYearMonth = computed(() => useAuth().currentYearMonth.value === props.yearMonth)
 
     const getDataFunction = async () => {
       const response = await apiProvider.axios.get<RevenueDailyDTO>('bi/sales/profit/revenue-daily-chart', {
@@ -116,7 +122,7 @@ export default defineComponent({
     const hooks: DailyBarsHooks<RevenueDailyDTO> = {
       beforeGetDataFunction: (chart: any) => {
         chart.options.chart.type = 'bar'
-        chart.options.stroke.width = [1]
+        chart.options.stroke.width = [1, 2]
         chart.options.chart.stacked = true
         chart.options.yaxis.labels.formatter = (value: number) => NumberUtils.number2thousand(value)
       },
@@ -138,9 +144,17 @@ export default defineComponent({
 
     const generateSeries = (revenueDTO: RevenueDailyDTO) => {
       const series = [{ type: 'column', name: 'Faturado', data: revenueDTO.billed }]
-      if (revenueDTO.goal_values.some(goal => goal > 0)) {
-        series.push({ type: 'line', name: 'Meta', data: revenueDTO.goal_values })
+
+      if (props.accumulated && props.prospect && isCurrentYearMonth.value) {
+        if (revenueDTO.prospect.some(it => it > 0)) {
+          series.push({ type: 'line', name: 'Expectativa', data: revenueDTO.prospect })
+        }
+      } else {
+        if (revenueDTO.goal_values.some(goal => goal > 0)) {
+          series.push({ type: 'line', name: 'Meta', data: revenueDTO.goal_values })
+        }
       }
+
       if (revenueDTO.not_billed.some(it => it > 0)) {
         series.push({ type: 'bar', name: 'Não faturado', data: revenueDTO.not_billed })
       }
@@ -182,8 +196,24 @@ export default defineComponent({
           code: props.code,
           yearMonth: props.yearMonth,
           accumulated: !props.accumulated,
-          type: props.type
-        }
+          type: props.type,
+          prospect: props.prospect
+        },
+        override: true
+      })
+    }
+
+    const changeProspect = (value: boolean) => {
+      emit('nextState', {
+        component: 'RevenueDailyChart',
+        props: {
+          code: props.code,
+          yearMonth: props.yearMonth,
+          accumulated: props.accumulated,
+          type: props.type,
+          prospect: value
+        },
+        override: true
       })
     }
 
@@ -212,7 +242,14 @@ export default defineComponent({
       }
     }
 
+    const title = computed(() => {
+      return 'Faturamento diário' +
+        (props.accumulated ? ' acumulado' : '') +
+        (props.prospect ? ' - Expectativa' : ' - Meta')
+    })
+
     return {
+      title,
       chartComponent,
       noData,
       loading,
@@ -227,7 +264,9 @@ export default defineComponent({
       teamsMap,
       dateLabel,
       nextMenu,
-      toAccumulated
+      toAccumulated,
+      changeProspect,
+      isCurrentYearMonth
     }
   }
 })
