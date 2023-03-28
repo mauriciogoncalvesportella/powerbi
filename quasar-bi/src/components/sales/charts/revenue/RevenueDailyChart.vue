@@ -71,7 +71,7 @@ import ChartBase from 'components/ChartBase.vue'
 import SellerList from 'src/components/sales/SellerList.vue'
 import YearMonthChip from 'src/components/YearMonthChip.vue'
 import { ptBR } from 'date-fns/locale'
-import { addDays, format, startOfDay } from 'date-fns'
+import { addDays, endOfDay, format } from 'date-fns'
 import { useStore } from 'src/store'
 import { apiProvider } from 'src/boot/axios'
 import { DailyBarsHooks, useDailyBars } from 'src/components/sales/charts/mixins/UseDailyBars'
@@ -126,7 +126,7 @@ export default defineComponent({
         chart.options.annotations = {
           xaxis: [
             {
-              x: startOfDay(addDays(new Date(), -1)).getTime(),
+              x: endOfDay(addDays(new Date(), -1)).getTime(),
               borderColor: ChartColors.primary,
               label: {
                 style: {
