@@ -221,7 +221,6 @@ export default defineComponent({
       loading.value = true
       error.value = false
       baseParams.value = params
-      console.log(params)
       apiProvider.axios.get<any>(`bi/order-info/${params.strategy}`, { params })
         .then(response => {
           orders.value = response.data
