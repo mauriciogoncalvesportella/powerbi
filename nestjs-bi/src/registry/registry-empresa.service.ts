@@ -47,7 +47,7 @@ export class RegistryEmpresaService {
     await connection.close()
     await publicConn.query(`GRANT USAGE ON SCHEMA ten_${schema} TO readaccess`)
     await publicConn.query(`GRANT SELECT ON ALL TABLES IN SCHEMA ten_${schema} TO readaccess`)
-    await publicConn.query(`ALTER DEFAULT PRIVILEGES IN SCHEMA ${schema} GRANT SELECT ON TABLES TO readaccess`)
+    await publicConn.query(`ALTER DEFAULT PRIVILEGES IN SCHEMA ten_${schema} GRANT SELECT ON TABLES TO readaccess`)
 
     /*
     await publicConn.query(`
