@@ -71,7 +71,7 @@ import ChartBase from 'components/ChartBase.vue'
 import SellerList from 'src/components/sales/SellerList.vue'
 import YearMonthChip from 'src/components/YearMonthChip.vue'
 import { ptBR } from 'date-fns/locale'
-import { endOfDay, format } from 'date-fns'
+import { addDays, format, startOfDay } from 'date-fns'
 import { useStore } from 'src/store'
 import { apiProvider } from 'src/boot/axios'
 import { DailyBarsHooks, useDailyBars } from 'src/components/sales/charts/mixins/UseDailyBars'
@@ -103,7 +103,6 @@ export default defineComponent({
 
   setup (props, { emit }) {
     const ChartColors = inject('ChartColors') as Record<string, string>
-    console.log(ChartColors)
     const $store = useStore()
     const chartComponent = ref(null) as Ref<any>
     const isCurrentYearMonth = computed(() => useAuth().currentYearMonth.value === props.yearMonth)
@@ -127,7 +126,7 @@ export default defineComponent({
         chart.options.annotations = {
           xaxis: [
             {
-              x: endOfDay(new Date()).getTime(),
+              x: startOfDay(addDays(new Date(), -1)).getTime(),
               borderColor: ChartColors.primary,
               label: {
                 style: {
