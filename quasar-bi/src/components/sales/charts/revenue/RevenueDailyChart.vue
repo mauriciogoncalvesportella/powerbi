@@ -71,13 +71,12 @@ import ChartBase from 'components/ChartBase.vue'
 import SellerList from 'src/components/sales/SellerList.vue'
 import YearMonthChip from 'src/components/YearMonthChip.vue'
 import { ptBR } from 'date-fns/locale'
-import { format } from 'date-fns'
+import { endOfDay, format } from 'date-fns'
 import { useStore } from 'src/store'
 import { apiProvider } from 'src/boot/axios'
 import { DailyBarsHooks, useDailyBars } from 'src/components/sales/charts/mixins/UseDailyBars'
-import { defineComponent, computed, ref, Ref } from 'vue'
+import { defineComponent, computed, ref, Ref, inject } from 'vue'
 import { RevenueDailyDTO } from 'src/dtos/sales/revenue.dto'
-import { getCssVar } from 'quasar'
 import { NumberUtils } from 'src/utils/number.utils'
 import { GetOrderListFromSeller, GlobalOrderInfoDialog } from 'src/reactive/UseGlobalDialogs'
 import { useAuth } from 'src/reactive/UseAuth'
@@ -103,6 +102,8 @@ export default defineComponent({
   },
 
   setup (props, { emit }) {
+    const ChartColors = inject('ChartColors') as Record<string, string>
+    console.log(ChartColors)
     const $store = useStore()
     const chartComponent = ref(null) as Ref<any>
     const isCurrentYearMonth = computed(() => useAuth().currentYearMonth.value === props.yearMonth)
@@ -119,45 +120,64 @@ export default defineComponent({
       return response
     }
 
+    const isProspectChart = computed(() => props.accumulated && props.prospect && isCurrentYearMonth.value)
+
     const hooks: DailyBarsHooks<RevenueDailyDTO> = {
       beforeGetDataFunction: (chart: any) => {
-        chart.options.chart.type = 'bar'
-        chart.options.stroke.width = [1, 2]
-        chart.options.chart.stacked = true
+        chart.options.annotations = {
+          xaxis: [
+            {
+              x: endOfDay(new Date()).getTime(),
+              borderColor: ChartColors.primary,
+              label: {
+                style: {
+                  color: ChartColors.primary
+                },
+                text: 'Hoje'
+              }
+            }
+          ]
+        }
+        chart.options.chart.type = isProspectChart.value ? 'line' : 'bar'
+        chart.options.stroke.width = isProspectChart.value ? [0, 3, 1] : [0, 0, 2]
+        chart.options.chart.stacked = !isProspectChart.value
         chart.options.yaxis.labels.formatter = (value: number) => NumberUtils.number2thousand(value)
       },
       afterGetDataFunction: (dto: RevenueDailyDTO, chart: any) => {
-        chart.options.stroke.width = [0]
-        chart.options.colors = [getCssVar('revenue_value')]
-        if (dto.goal_values.some(goal => goal > 0)) {
-          chart.options.chart.type = undefined
-          chart.options.stroke.width.push(2)
-          chart.options.colors.push(getCssVar('revenue_goal'))
-        }
+        chart.options.colors = [ChartColors.revenue_value]
         if (dto.not_billed.some(value => value > 0)) {
           chart.options.chart.type = undefined
-          chart.options.stroke.width.push(0)
-          chart.options.colors.push(getCssVar('revenue_not_billed'))
+          chart.options.colors.push(ChartColors.revenue_not_billed)
+        }
+        if (dto.goal_values.some(goal => goal > 0)) {
+          chart.options.chart.type = undefined
+          chart.options.colors.push(ChartColors.revenue_goal)
         }
       }
     }
 
     const generateSeries = (revenueDTO: RevenueDailyDTO) => {
-      const series = [{ type: 'column', name: 'Faturado', data: revenueDTO.billed }]
+      const series = []
 
-      if (props.accumulated && props.prospect && isCurrentYearMonth.value) {
+      if (isProspectChart.value) {
+        const totalRevenue = revenueDTO.billed.map((val, index) => val + revenueDTO.not_billed[index])
+        series.push({ type: 'column', name: 'Faturado', data: totalRevenue })
         if (revenueDTO.prospect.some(it => it > 0)) {
           series.push({ type: 'line', name: 'Expectativa', data: revenueDTO.prospect })
         }
+        if (revenueDTO.goal_values.some(goal => goal > 0)) {
+          series.push({ type: 'line', name: 'Meta', data: revenueDTO.goal_values })
+        }
       } else {
+        series.push({ type: 'column', name: 'Faturado', data: revenueDTO.billed })
+        if (revenueDTO.not_billed.some(it => it > 0)) {
+          series.push({ type: 'bar', name: 'Não faturado', data: revenueDTO.not_billed })
+        }
         if (revenueDTO.goal_values.some(goal => goal > 0)) {
           series.push({ type: 'line', name: 'Meta', data: revenueDTO.goal_values })
         }
       }
 
-      if (revenueDTO.not_billed.some(it => it > 0)) {
-        series.push({ type: 'bar', name: 'Não faturado', data: revenueDTO.not_billed })
-      }
       return series
     }
 

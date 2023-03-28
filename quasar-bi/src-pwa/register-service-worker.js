@@ -38,12 +38,7 @@ register(process.env.SERVICE_WORKER_FILE, {
       onDismiss: () => {
         // location.reload(true)
         // https://stackoverflow.com/questions/65990413/javascript-clear-browser-cache-for-end-user
-        caches
-          .keys()
-          .then((keyList) => {
-            return Promise.all(keyList.map((key) => caches.delete(key)))
-              .finally(window.location.reload())
-          })
+        window.location.reload(true)
       }
     })
   },
