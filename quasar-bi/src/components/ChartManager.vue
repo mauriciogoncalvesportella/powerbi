@@ -38,6 +38,7 @@ import LinearityPotentialChart from 'components/sales/charts/linearity/Linearity
 import FactoryResumeChart from 'components/sales/charts/factory/FactoryResumeChart.vue'
 import FactoryResumeTeamChart from 'components/sales/charts/factory/FactoryResumeTeamChart.vue'
 import ComparativeBars from 'components/sales/charts/comparative/ComparativeBars.vue'
+import ComparativePeriods from 'components/sales/charts/comparative/ComparativePeriods.vue'
 import { cloneDeep } from 'lodash'
 
 interface ChartState {
@@ -71,7 +72,8 @@ class Props {
     LinearityPotentialChart,
     FactoryResumeChart,
     FactoryResumeTeamChart,
-    ComparativeBars
+    ComparativeBars,
+    ComparativePeriods
   }
 })
 export default class ChartManager extends Vue.with(Props) {

@@ -5,7 +5,9 @@
     <responsive-header>
       <sales-header
         :show-year-month="false"
-      />
+      >
+        <comparative-dropdown />
+      </sales-header>
     </responsive-header>
 
     <transition
@@ -17,6 +19,18 @@
         class="row justify-center q-mt-md q-col-gutter-sm q-mx-md"
       >
         <div
+          class="col-12 col-md-8 col-lg-6"
+        >
+          <chart-manager
+            ref="ComparativePeriodsRef"
+            startComponent="ComparativePerids"
+            :startProps="{
+              'extern-no-data': true,
+              chartType: 'revenue'
+            }"
+          />
+        </div>
+        <!--div
           class="col-12 col-md-5 col-lg-4"
         >
           <chart-manager
@@ -41,7 +55,7 @@
           />
         </div>
         <div
-          v-if="user.fgFuncao === 3"
+          v-if="user?.fgFuncao === 3"
           class="col-12 col-md-5 col-lg-4"
         >
           <chart-manager
@@ -52,7 +66,7 @@
               chartType: 'profit'
             }"
           />
-        </div>
+        </div-->
       </div>
     </transition>
   </q-page>
@@ -63,29 +77,58 @@ import ChartManager from 'components/ChartManager.vue'
 import ResponsiveHeader from 'src/components/core/ResponsiveHeader.vue'
 import SalesHeader from 'src/components/sales/SalesHeader.vue'
 import MarkupLoading from 'src/pages/Markup/MarkupLoading.vue'
+import ComparativeDropdown from 'src/components/sales/comparative/ComparativeDropdown.vue'
 import { useTeamDropdown } from 'src/reactive/UseTeamDropdown'
 import { useAuth } from 'src/reactive/UseAuth'
 import { useYearMonthDropdown } from 'src/reactive/YearMonthDropdown'
-import { defineComponent, nextTick, Ref, ref, onMounted } from 'vue'
+import { defineComponent, nextTick, Ref, ref, onMounted, watch } from 'vue'
 import { format, addMonths } from 'date-fns'
+import { useComparative } from 'src/reactive/UseComparative'
 
 export default defineComponent({
   components: {
     MarkupLoading,
     ChartManager,
     ResponsiveHeader,
-    SalesHeader
+    SalesHeader,
+    ComparativeDropdown
   },
 
   setup () {
     const { user } = useAuth()
     const { yearMonth } = useYearMonthDropdown()
     const { team: teamHeader, status: teamHeaderStatus, updateSelected, params, refresh } = useTeamDropdown(true)
+    const { headerModels } = useComparative()
     const endYearMonth = format(addMonths(new Date(), 0), 'yyyy-MM')
     const startYearMonth = format(addMonths(new Date(), -5), 'yyyy-MM')
     params.value = { teamCode: user.value?.cdEquipe as number, interval: [startYearMonth, endYearMonth] }
     refresh()
 
+    const ComparativePeriodsRef: Ref<any> = ref(null)
+    const update = (status: string) => {
+      nextTick(() => {
+        if (status === 'loaded') {
+          ComparativePeriodsRef.value?.newState({
+            component: 'ComparativePeriods',
+            props: {
+              code: teamHeader.value?.code,
+              type: teamHeader.value?.type,
+              dataMode: headerModels.value.dataMode,
+              iterationMode: headerModels.value.iterationMode,
+              expandTeam: false,
+              frequency: headerModels.value.frequency,
+              iterationsCount: headerModels.value.iterations
+            }
+          })
+        } else {
+          ComparativePeriodsRef.value?.newState({ component: 'ComparativePeriods', props: { 'extern-no-data': true } })
+        }
+      })
+    }
+
+    watch(headerModels, () => update('loaded'), { deep: true })
+
+    /*
     const ComparativeBarsProfitRef: Ref<any> = ref(null)
     const ComparativeBarsMarkupRef: Ref<any> = ref(null)
     const ComparativeBarsRevenueRef: Ref<any> = ref(null)
@@ -124,6 +167,7 @@ export default defineComponent({
         }
       })
     }
+    */
 
     const updateIfSeller = () => {
       if (user.value?.fgFuncao === 1) {
@@ -135,9 +179,10 @@ export default defineComponent({
     updateSelected.value = (status) => update(status)
 
     return {
-      ComparativeBarsProfitRef,
-      ComparativeBarsMarkupRef,
-      ComparativeBarsRevenueRef,
+      ComparativePeriodsRef,
+      // ComparativeBarsProfitRef,
+      // ComparativeBarsMarkupRef,
+      // ComparativeBarsRevenueRef,
       update,
       user,
       yearMonth,
