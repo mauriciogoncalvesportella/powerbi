@@ -54,3 +54,12 @@ export interface ComparativeDTO {
     values: number[]
   }[]
 }
+
+export interface ComparativeLinesDTO {
+  series: {
+    type: string,
+    name: string,
+    data: number[]
+  }[],
+  labels: string[]
+}
