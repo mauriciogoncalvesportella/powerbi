@@ -35,21 +35,41 @@ export class TeamUtilsService {
       teamEntities: {} as Record<number, ChildTeamsQueryResult>,
       sellersEntities: {} as Record<number, SellerQueryResult>,
       rootTeam: code,
+      getParent: {} as Record<number, number>,
       teams: {} as Record<number, { parent_team: number, type: 'parent' | 'child' }>
     }
 
     const teams = await this.repository.getChildTeams(code)
     const sellers = await this.repository.getSellersFromTeam(code)
+    const parents: Record<number, string> = {}
 
     for (const team of teams) {
       expandTeamReturn.teamEntities[team.code] = team
       if (team.code !== team.parent_team_code) {
+        if (team.parent_team_code === code) {
+          parents[team.code] = team.team_id
+        }
+
         expandTeamReturn.teams[team.code] = {
           parent_team: team.parent_team_code,
           type: team.parent_team_code === code ? 'parent' : 'child'
         }
       }
     }
+
+      
+    for (const team of teams) {
+      if (team.code !== team.parent_team_code) {
+        for (const parentCode in parents) {
+          const parentId = parents[parentCode]
+          if (team.team_id.includes(parentId)) {
+            expandTeamReturn.getParent[team.code] = parseInt(parentCode)
+            continue
+          }
+        }
+      }
+    }
+
 
     for (const seller of sellers) {
       expandTeamReturn.sellersEntities[seller.code] = seller

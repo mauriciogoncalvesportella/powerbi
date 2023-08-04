@@ -3,7 +3,8 @@ import {format} from "date-fns";
 import {VdPedidoEntity} from "src/database/entity/tenant/vd_pedido.entity";
 import {VdPedidoProdutoEntity} from "src/database/entity/tenant/vd_pedido_produto.entity";
 import {Connection, EntityManager, Equal, In} from "typeorm";
-import {OrderDTO, OrderProductDTO} from "./sales.types";
+import {FavoriteProductDTO, OrderDTO, OrderProductDTO} from "./sales.types";
+import { CadProdutoEntity } from "src/database/entity/tenant/cad_produto.entity";
 
 @Injectable()
 export class SalesRepository {
@@ -56,5 +57,16 @@ export class SalesRepository {
       .where({ cdPedido: Equal(cdOrder) })
       .getMany()) as OrderProductDTO[]
     return raw
+  }
+
+  async getFavoriteProducts (): Promise<FavoriteProductDTO[]> {
+    const entities = await this.manager.find(CadProdutoEntity,{ where: {
+      fgFavorito: true
+    }})
+
+    return entities.map(entity => ({
+      code: entity.cd,
+      label: entity.nmProduto
+    }))
   }
 }

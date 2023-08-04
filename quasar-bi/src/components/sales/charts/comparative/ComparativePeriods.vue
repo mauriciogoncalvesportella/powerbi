@@ -8,12 +8,21 @@
     :no-data="noData || externNoData"
     :error="error"
     :state-count="stateCount"
-    :filter-disabled="iterationMode === 'periods'"
   >
+    <template v-slot:header>
+      <q-chip
+        v-if="favoriteProductSelected"
+        removable
+        dense
+        :label="favoriteProductSelected.label"
+        @remove="$emit('custom-event', { id: 'COMPARATIVE_PERIODS_REMOVE_FAV' })"
+      />
+    </template>
     <template
       v-slot:filter
     >
       <div
+        v-if="iterationMode !== 'yearly'"
         class="column"
       >
         <q-btn
@@ -31,6 +40,18 @@
           @click="toggleExpandTeam"
         />
       </div>
+      <q-list bordered separator>
+        <q-item
+          v-for="favoriteProduct in favoriteProducts"
+          :key="`${favoriteProduct.code}-${favoriteProduct.label}`"
+          clickable
+          v-ripple
+          :active="favoriteProduct.code === favoriteProductSelected?.code"
+          @click="$emit('custom-event', { id: 'COMPARATIVE_PERIODS_ON_CLICK_FAV', payload: favoriteProduct })"
+        >
+          <q-item-section>{{ favoriteProduct.label }}</q-item-section>
+        </q-item>
+      </q-list>
         <!--q-btn-group
           v-if="accumulated && isCurrentYearMonth"
           spread
@@ -58,6 +79,7 @@ import { apiProvider } from 'src/boot/axios'
 import { ComparativeLinesDTO } from 'src/dtos/sales/revenue.dto'
 import { NumberUtils } from 'src/utils/number.utils'
 import { cloneDeep } from 'lodash'
+import { FavoriteProductDTO } from 'src/reactive/UseComparative'
 
 const chartScaffold = {
   options: {
@@ -108,7 +130,8 @@ const chartScaffold = {
       },
       categories: [] as string[]
     }
-  }
+  },
+  series: []
 }
 
 export default defineComponent({
@@ -119,10 +142,13 @@ export default defineComponent({
   props: {
     code: { type: Number, required: false },
     type: { type: String, required: false },
-    dataMode: { type: String as PropType<'profit' | 'markup' | 'revenue'>, default: 'profit' },
+    yearMonth: { type: String, required: true },
+    favoriteProductSelected: { type: Object as PropType<FavoriteProductDTO>, required: false },
+    favoriteProducts: { type: Array as PropType<FavoriteProductDTO[]>, default: () => [] },
+    dataMode: { type: String as PropType<'profit' | 'markup' | 'revenue' | 'products_count'>, default: 'profit' },
     frequency: { type: String as PropType<'monthly' | 'anualy' | 'semester' | 'quartely'>, default: 'monthly' },
-    expandTeam: { type: Boolean, default: false },
-    iterationMode: { type: String as PropType<'previous'|'periods'>, default: 'periods' },
+    expandTeam: { type: Boolean, default: true },
+    iterationMode: { type: String as PropType<'previous'|'previous_years'|'yearly'>, default: 'previous' },
     iterationsCount: { type: Number, default: 5 },
     stateCount: { type: Number, default: 0 },
     externNoData: { type: Boolean, default: false },
@@ -144,7 +170,8 @@ export default defineComponent({
       const titles = {
         profit: 'Lucro',
         markup: 'Markup',
-        revenue: 'Faturamento'
+        revenue: 'Faturamento',
+        products_count: 'Quantidade de Produtos'
       }
       return titles[props.dataMode] ?? 'Erro'
     })
@@ -155,21 +182,26 @@ export default defineComponent({
           data_mode: props.dataMode,
           code: props.code,
           type: props.type,
+          yearMonth: props.yearMonth,
           frequency: props.frequency,
           expand_team: props.expandTeam,
           iteration_mode: props.iterationMode,
-          iterations: props.iterationsCount
+          iterations: props.iterationsCount,
+          product_code: props.favoriteProductSelected?.code
         }
       })
     }
 
     const beforePlot = () => {
-      if (props.dataMode !== 'revenue') {
+      if (props.dataMode === 'markup' || props.dataMode === 'profit') {
         chart.value.options.yaxis.labels.formatter = (value: number) => `${value}%`
         chart.value.options.tooltip.y.formatter = (value: number) => `${value.toFixed(2)}%`
-      } else {
+      } else if (props.dataMode === 'revenue') {
         chart.value.options.yaxis.labels.formatter = NumberUtils.number2thousand
         chart.value.options.tooltip.y.formatter = NumberUtils.number2currency
+      } else {
+        delete chart.value.options.yaxis.labels.formatter
+        delete chart.value.options.tooltip.y.formatter
       }
     }
 
@@ -205,12 +237,12 @@ export default defineComponent({
 
     return {
       title,
-      updateProps,
       chartComponent,
       loading,
       noData,
       error,
       chart,
+      updateProps,
       toggleExpandTeam
     }
   }

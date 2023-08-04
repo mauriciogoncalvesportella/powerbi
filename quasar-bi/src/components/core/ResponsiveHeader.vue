@@ -5,7 +5,7 @@
     <div
       class="text-black"
     >
-      <template v-if="!$q.screen.lt.sm">
+      <template v-if="!$q.screen.lt.md">
         <div
           class="row justify-center items-center q-mx-sm"
           style="height: 64px"
@@ -23,7 +23,7 @@
       </template>
       <template v-else>
         <q-toolbar
-          class="transparent lt-sm"
+          class="transparent lt-md"
         >
           <q-btn
             flat

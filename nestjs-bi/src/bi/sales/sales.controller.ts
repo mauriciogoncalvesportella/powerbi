@@ -37,4 +37,9 @@ export class SalesController {
   ) {
     return await this.salesService.getOrderProducts(cdOrder)
   }
+
+  @Get('favorite-products')
+  async getFavoriteProducts () {
+    return await this.salesService.getFavoriteProducts()
+  }
 }

@@ -53,13 +53,14 @@ export class ProfitQueries implements IProfitQueries {
           JOIN ${this.tenant}.cad_vendedor cv on true
           JOIN ${this.tenant}.cad_equipe ce on ce.cd = cv."cdEquipe"
           LEFT JOIN ${this.tenant}.vd_pedidos vp on vp."dtEmissao" = data and vp."cdVendedor" = cv.cd AND vp."idMesAno" = :yearMonth AND vp."fgSituacao" IN (1,2,4,5)
-          where (cv.cd = :sellerCode or vp."cdVendedor2" = :sellerCode or ce."idEquipe" like :teamId||'%')
+          WHERE (cv.cd = :sellerCode or vp."cdVendedor2" = :sellerCode or ce."idEquipe" like :teamId||'%')
       GROUP BY data
       ORDER BY data
       `,
       { yearMonth, date0: dates[0], date1: dates[1], sellerCode, teamId },
       {}
     )
+    console.log(parameters)
 
     return await this.connection.manager.query(query, parameters)
   }

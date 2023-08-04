@@ -6,6 +6,7 @@
       :is="currentChartState.component"
       :key="key"
       v-bind="currentChartState.props"
+      @custom-event="$emit('custom-event', $event)"
       @next-state-year-month="nextStateYearMonth($event)"
       @nextState="nextState($event)"
       @newState="newState($event)"

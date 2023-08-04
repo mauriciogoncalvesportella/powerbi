@@ -72,13 +72,13 @@ export class GetYearMonths {
     return PeriodStructure.monthsByPeriod[this.frequency][period.period]
   }
 
-  public previous (iterations: number, currentYearMonth: string, byPeriods: boolean = false): GetYearMonthsReturn {
+  public previous (iterations: number, currentYearMonth: string, iteration_mode: 'previous' | 'previous_years' | 'yearly'): GetYearMonthsReturn {
     const ret: GetYearMonthsReturn = { periods: {}, monthLabels, yearMonths: [], periodFromYearMonth: {}, periodsArr: [], periodsLabelsMap, periodsMonths: {} }
     const currentPeriod = this.getPeriodFromDate(new Date(`${currentYearMonth}-01`))
     
     for (let i = 0; i < iterations; i++) {
       ret.periodsArr.push(new Period(currentPeriod.year, currentPeriod.period))
-      if (byPeriods) {
+      if (iteration_mode === 'yearly' || iteration_mode === 'previous_years') {
         currentPeriod.year--
       } else {
         currentPeriod.period--
