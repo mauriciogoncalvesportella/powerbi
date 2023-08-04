@@ -80,7 +80,7 @@ export default defineComponent({
   props: {
     code: { type: Number, required: false },
     type: { type: String, required: false },
-    chartType: { type: String as PropType<'profit' | 'markup' | 'revenue'>, default: 'profit' },
+    chartType: { type: String as PropType<'profit' | 'markup' | 'revenue' | 'products_count'>, default: 'profit' },
     stateCount: { type: Number, default: 0 },
     externNoData: { type: Boolean, default: false },
     externLoading: { type: Boolean, default: false }
@@ -103,7 +103,8 @@ export default defineComponent({
       const titles = {
         profit: 'Lucro',
         markup: 'Markup',
-        revenue: 'Faturamento'
+        revenue: 'Faturamento',
+        products_count: 'Quantidade de Produtos'
       }
       return titles[props.chartType] ?? 'Erro'
     })
@@ -130,9 +131,12 @@ export default defineComponent({
       if (props.chartType === 'profit' || props.chartType === 'markup') {
         chart.value.options.yaxis.labels.formatter = (value: number) => `${value}%`
         chart.value.options.tooltip.y.formatter = (value: number) => `${value.toFixed(2)}%`
-      } else {
+      } else if (props.chartType === 'revenue') {
         chart.value.options.yaxis.labels.formatter = NumberUtils.number2thousand
         chart.value.options.tooltip.y.formatter = NumberUtils.number2currency
+      } else {
+        delete chart.value.options.yaxis.labels.formatter
+        delete chart.value.options.tooltip.y.formatter
       }
     }
 

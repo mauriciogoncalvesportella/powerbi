@@ -14,8 +14,8 @@ export class GetYearMonthsService {
     private requestMetadata: RequestMetadata
   ) { }
 
-  async execute (type: 'semester' | 'monthly' | 'quartely' | 'anualy', iterations: number, byPeriods: boolean = false): Promise<GetYearMonthsReturn> {
-    const currentYearMonth = await this.requestMetadata.getYearMonth(new Date())
+  async execute (type: 'semester' | 'monthly' | 'quartely' | 'anualy', yearMonth: string, iterations: number, iteration_mode: 'previous' | 'previous_years' | 'yearly'): Promise<GetYearMonthsReturn> {
+    // const currentYearMonth = await this.requestMetadata.getYearMonth(new Date())
     let electedStrategy: GetYearMonths
 
     switch (type) {
@@ -26,6 +26,6 @@ export class GetYearMonthsService {
       default: throw new BadRequestException("type must be one of 'semester', 'monthly', 'quartely', 'anualy'")
     }
 
-    return electedStrategy.previous(iterations, currentYearMonth, byPeriods)
+    return electedStrategy.previous(iterations, yearMonth, iteration_mode)
   }
 }

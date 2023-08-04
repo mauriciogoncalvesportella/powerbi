@@ -7,22 +7,18 @@ import { Period } from "../get-year-months/types";
 import ComparativeUtils from "../comparative.utils";
 
 @Injectable()
-export class PeriodsUseCase {
+export class YearlyUseCase {
   constructor (
     private queries: ComparativeRepository,
     private getYearMonthsService: GetYearMonthsService,
-    private teamUtils: TeamUtilsService
   ) { }
 
   async execute (dto: ComparativeDTO): Promise<ComparativeOutputDTO> {
-    const getYearMonths = await this.getYearMonthsService.execute(dto.frequency, dto.iterations, dto.byPeriods)
-    const orders = await this.queries.ordersByMonth(dto.code, dto.type, getYearMonths.yearMonths)
+    const getYearMonths = await this.getYearMonthsService.execute(dto.frequency, dto.yearMonth, dto.iterations, dto.iteration_mode)
+    const orders = await this.queries.ordersByMonth(dto.code, dto.type, getYearMonths.yearMonths, dto.product_code)
     const monthsLabels = getYearMonths.periodsLabelsMap['monthly']
-    const comparativeMap: Record<string, Record<string, Record<'revenue'|'profit_value'|'cost_value', number>>> = {}
+    const comparativeMap: Record<string, Record<string, Record<'revenue'|'profit_value'|'cost_value'|'products_count', number>>> = {}
     const output: ComparativeOutputDTO = { labels: [], series: [] } 
-    // const series = []
-    // const series_names = []
-    // const labels = []
 
     for (const periodKey in getYearMonths.periods) {
       const months = getYearMonths.periodsMonths[periodKey]
@@ -37,7 +33,10 @@ export class PeriodsUseCase {
       ComparativeUtils.add(comparativeMap[period.key][order.month], order)
     }
 
-    for (const periodKey in comparativeMap) {
+    const periodsKeys = Object.keys(comparativeMap)
+    periodsKeys.sort()
+
+    for (const periodKey of periodsKeys) {
       const monthValues = comparativeMap[periodKey]
       const period = Period.factory(periodKey)
       const values = []

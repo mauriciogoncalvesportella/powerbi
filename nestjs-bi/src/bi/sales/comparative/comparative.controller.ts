@@ -2,18 +2,19 @@ import { Controller, Get, Query, UseGuards, ValidationPipe } from '@nestjs/commo
 import { JwtGuard } from 'src/auth/jwt.guard'
 import { UserDeactivatedGuard } from 'src/auth/user-status/user-status.guard'
 import { ComparativeDTO } from './comparative.dto'
-import { ComparativeUseCases } from './comparative.use-cases'
-import { PeriodsUseCase } from './use-cases/periods.use-case'
+import { YearlyUseCase } from './use-cases/yearly.use-case'
 import { PreviousExpandUseCase } from './use-cases/previous-expand.use-case'
 import { PreviousUseCase } from './use-cases/previous.use-case'
+import { PreviousExpandProductsUseCase } from './use-cases/previous-expand-products.use-case'
 
 @UseGuards(JwtGuard, UserDeactivatedGuard)
 @Controller('/bi/sales/comparative')
 export class ComparativeController {
   constructor (
-    private periodsUseCase: PeriodsUseCase,
+    private yearlyUseCase: YearlyUseCase,
     private previousExpandUseCase: PreviousExpandUseCase,
-    private previousUseCase: PreviousUseCase
+    private previousUseCase: PreviousUseCase,
+    private previousExpandProductsUseCase: PreviousExpandProductsUseCase
   ) { }
   
   @Get('')
@@ -24,12 +25,20 @@ export class ComparativeController {
       forbidNonWhitelisted: true
     })) query: ComparativeDTO
   ) {
-    if (query.iteration_mode === 'previous') {
-      if (query.expand_team) {
-        return await this.previousExpandUseCase.execute(query)
-      }
-      return await this.previousUseCase.execute(query)
+
+    switch (query.iteration_mode) {
+      case 'previous':
+      case 'previous_years':
+        if (query.expand_team && query.data_mode === 'products_count') {
+          return await this.previousExpandProductsUseCase.execute(query)
+        }
+        if (query.expand_team) {
+          return await this.previousExpandUseCase.execute(query)
+        }
+        return await this.previousUseCase.execute(query)
+
+      case 'yearly':
+        return await this.yearlyUseCase.execute(query)
     }
-    return await this.periodsUseCase.execute(query)
   }
 }

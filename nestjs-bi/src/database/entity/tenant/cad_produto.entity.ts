@@ -1,4 +1,4 @@
-import {IsInt, IsNumber, IsOptional, IsString} from "class-validator";
+import {IsBoolean, IsInt, IsNumber, IsOptional, IsString} from "class-validator";
 import { Column, Entity, Index, PrimaryColumn } from "typeorm";
 
 @Entity('cad_produto')
@@ -69,4 +69,10 @@ export class CadProdutoEntity {
   @IsNumber()
   @IsOptional()
   pcCredIcms: number
+
+  @Column('boolean', { default: false })
+  @Index('IDX_CADPRODUTO_FGFAVORITO')
+  @IsBoolean()
+  @IsOptional()
+  fgFavorito: boolean
 }

@@ -15,10 +15,10 @@ export class PreviousExpandUseCase {
   ) { }
 
   async execute (dto: ComparativeDTO): Promise<ComparativeOutputDTO> {
-    const getYearMonths = await this.getYearMonthsService.execute(dto.frequency, dto.iterations, dto.byPeriods)
-    const orders = await this.queries.ordersByMonthExpanded(dto.code, getYearMonths.yearMonths)
+    const getYearMonths = await this.getYearMonthsService.execute(dto.frequency, dto.yearMonth, dto.iterations, dto.iteration_mode)
+    const orders = await this.queries.ordersByMonthExpanded(dto.code, getYearMonths.yearMonths, dto.product_code)
     const expandTeam = await this.teamUtils.expandTeam(dto.code)
-    const comparativeMap: Record<string, Record<string, Record<'revenue'|'profit_value'|'cost_value', number>>> = {}
+    const comparativeMap: Record<string, Record<string, Record<'revenue'|'profit_value'|'cost_value'|'products_count', number>>> = {}
     const output: ComparativeOutputDTO = { labels: [], series: [] }
     const series_names = []
 
@@ -26,7 +26,7 @@ export class PreviousExpandUseCase {
     const sellers = Object.keys(expandTeam.sellersEntities).map(seller => parseInt(seller))
     series_names.push(...teams.filter(team => expandTeam.teams[team].type === 'parent').map(team => `team_${team}`))
     series_names.push(...sellers.map(seller => `seller_${seller}`))
-    
+
     for (const key of series_names) {
       comparativeMap[key] = {}
       for (const periodKey in getYearMonths.periods) {
@@ -37,24 +37,24 @@ export class PreviousExpandUseCase {
     for (const order of orders) {
       const period = getYearMonths.periodFromYearMonth[order.year_month]
       const seller = expandTeam.sellersEntities[order.seller_code]
-      const team = expandTeam.teams[order.team_code]
+      const parent_team = expandTeam.getParent[order.team_code]
       const key = seller
         ? `seller_${order.seller_code}`
-        : team.parent_team
-        ? `team_${order.team_code}`
-        : `team_${team.parent_team}`
+        : `team_${parent_team}`
+
       ComparativeUtils.add(comparativeMap[key][period.key], order)
     }
 
     for (const teamKey in comparativeMap) {
       const values = []
 
-      for (const periodKey in comparativeMap[teamKey]) {
+      const periodsKeys = Object.keys(comparativeMap[teamKey]).sort()
+      for (const periodKey of periodsKeys) {
         values.push(ComparativeUtils.getValue(dto.data_mode, comparativeMap[teamKey][periodKey]))
       }
 
       if (output.labels.length === 0) {
-        for (const periodKey in comparativeMap[teamKey]) {
+        for (const periodKey of periodsKeys) {
           const period = Period.factory(periodKey)
           output.labels.push(`${period.year}/${getYearMonths.periodsLabelsMap[dto.frequency][period.period]}`)
         }

@@ -15,5 +15,4 @@ export class addVdPedidosVendedor21668800454599 implements MigrationInterface {
         await queryRunner.query(`DROP INDEX "${schema}"."IDX_VDPEDIDOS_CDVENDEDOR_2"`);
         await queryRunner.query(`ALTER TABLE "${schema}"."vd_pedidos" DROP COLUMN "cdVendedor2"`);
     }
-
 }

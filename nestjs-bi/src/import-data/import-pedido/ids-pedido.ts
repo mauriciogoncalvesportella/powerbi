@@ -1,13 +1,13 @@
-import {Inject, Injectable, OnModuleInit, forwardRef} from "@nestjs/common";
-import {VdPedidoEntity} from "src/database/entity/tenant/vd_pedido.entity";
+import { Inject, Injectable, OnModuleInit, forwardRef} from "@nestjs/common";
+import { VdPedidoEntity } from "src/database/entity/tenant/vd_pedido.entity";
 import { UnitOfWorkEntity } from "src/database/unit-of-work/uow.provider";
-import {IImportData} from "../import-data.interface";
-import {ImportDataService} from "../import-data.service";
-import {IDSEmpresa} from "../import-empresa/ids-empresa";
+import { IImportData } from "../import-data.interface";
+import { ImportDataService } from "../import-data.service";
+import { IDSEmpresa } from "../import-empresa/ids-empresa";
 import { IDSVendedor } from "../import-empresa/ids-vendedor";
-import {IDSCliente} from "./ids-cliente";
-import {IDSCondicaoPagamento} from "./ids-condicao-pagamento";
-import {IDSTipoPedido} from "./ids-tipo-pedido";
+import { IDSCliente } from "./ids-cliente";
+import { IDSCondicaoPagamento } from "./ids-condicao-pagamento";
+import { IDSTipoPedido } from "./ids-tipo-pedido";
 import { IDSPedidoProduto } from "../import-produto/ids-pedido-produto";
 
 type MyEntity = VdPedidoEntity

@@ -4,7 +4,7 @@
   >
     <div
       v-show="showYearMonth"
-      class="col-12 col-sm-4 col-md-3 col-lg-2"
+      class="col-12 col-md-3 col-lg-2"
     >
       <year-month-dropdown
         id="yearMonthDropdownComponent"
@@ -12,7 +12,7 @@
     </div>
     <div
       v-show="showTeam"
-      class="col-12 col-sm-4 col-md-3 col-lg-2"
+      class="col-12 col-md-3 col-lg-2"
     >
       <team-dropdown />
     </div>

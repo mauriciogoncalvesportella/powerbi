@@ -11,6 +11,11 @@ export interface OrderDTO extends VdPedidoEntity {
   client: CadClienteEntity
 }
 
+export interface FavoriteProductDTO {
+  code: number,
+  label: string,
+}
+
 export interface IBaseDailyBarsChart {
   goal: number,
   dates: string[],

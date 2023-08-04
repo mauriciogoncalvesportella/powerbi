@@ -2,7 +2,7 @@
   <q-btn-dropdown
     push
     color="primary"
-    style="width: 400px"
+    class="full-width"
   >
     <template
       v-slot:label
@@ -25,7 +25,6 @@
     </template>
     <div
       class="column q-pa-sm q-gutter-sm"
-      style="width: 400px"
     >
       <div
         v-if="user?.fgFuncao != 1"

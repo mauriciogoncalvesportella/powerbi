@@ -29,4 +29,8 @@ export class SalesService {
   async getOrderProducts (cdOrder: number) {
     return this.salesRepository.orderProducts(cdOrder)
   }
+
+  async getFavoriteProducts () {
+    return await this.salesRepository.getFavoriteProducts()
+  }
 }

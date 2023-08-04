@@ -3,10 +3,12 @@
     class="column full-width q-pb-lg"
   >
     <responsive-header>
-      <sales-header
-        :show-year-month="false"
-      >
-        <comparative-dropdown />
+      <sales-header>
+        <div
+          class="col-12 col-md-4 col-lg-3"
+        >
+            <comparative-dropdown />
+        </div>
       </sales-header>
     </responsive-header>
 
@@ -28,45 +30,9 @@
               'extern-no-data': true,
               chartType: 'revenue'
             }"
+            @custom-event="customEvent"
           />
         </div>
-        <!--div
-          class="col-12 col-md-5 col-lg-4"
-        >
-          <chart-manager
-            ref="ComparativeBarsRevenueRef"
-            startComponent="ComparativeBars"
-            :startProps="{
-              'extern-no-data': true,
-              chartType: 'revenue'
-            }"
-          />
-        </div>
-        <div
-          class="col-12 col-md-5 col-lg-4"
-        >
-          <chart-manager
-            ref="ComparativeBarsMarkupRef"
-            startComponent="ComparativeBars"
-            :startProps="{
-              'extern-no-data': true,
-              chartType: 'markup'
-            }"
-          />
-        </div>
-        <div
-          v-if="user?.fgFuncao === 3"
-          class="col-12 col-md-5 col-lg-4"
-        >
-          <chart-manager
-            ref="ComparativeBarsProfitRef"
-            startComponent="ComparativeBars"
-            :startProps="{
-              'extern-no-data': true,
-              chartType: 'profit'
-            }"
-          />
-        </div-->
       </div>
     </transition>
   </q-page>
@@ -98,11 +64,10 @@ export default defineComponent({
     const { user } = useAuth()
     const { yearMonth } = useYearMonthDropdown()
     const { team: teamHeader, status: teamHeaderStatus, updateSelected, params, refresh } = useTeamDropdown(true)
-    const { headerModels } = useComparative()
+    const { headerModels, getFavoriteProducts, favoriteProducts, removeFavoriteProductSelected, setFavoriteProduct, selectedFavoriteProduct } = useComparative()
     const endYearMonth = format(addMonths(new Date(), 0), 'yyyy-MM')
     const startYearMonth = format(addMonths(new Date(), -5), 'yyyy-MM')
     params.value = { teamCode: user.value?.cdEquipe as number, interval: [startYearMonth, endYearMonth] }
-    refresh()
 
     const ComparativePeriodsRef: Ref<any> = ref(null)
     const update = (status: string) => {
@@ -114,8 +79,11 @@ export default defineComponent({
               code: teamHeader.value?.code,
               type: teamHeader.value?.type,
               dataMode: headerModels.value.dataMode,
+              favoriteProductSelected: selectedFavoriteProduct,
+              favoriteProducts: favoriteProducts.value,
+              yearMonth: yearMonth.value,
               iterationMode: headerModels.value.iterationMode,
-              expandTeam: false,
+              expandTeam: true,
               frequency: headerModels.value.frequency,
               iterationsCount: headerModels.value.iterations
             }
@@ -126,63 +94,37 @@ export default defineComponent({
       })
     }
 
-    watch(headerModels, () => update('loaded'), { deep: true })
-
-    /*
-    const ComparativeBarsProfitRef: Ref<any> = ref(null)
-    const ComparativeBarsMarkupRef: Ref<any> = ref(null)
-    const ComparativeBarsRevenueRef: Ref<any> = ref(null)
-
-    const update = (status: string) => {
-      nextTick(() => {
-        if (status === 'loaded') {
-          ComparativeBarsProfitRef.value?.newState({
-            component: 'ComparativeBars',
-            props: {
-              code: teamHeader.value?.code,
-              type: teamHeader.value?.type,
-              chartType: 'profit'
-            }
-          })
-          ComparativeBarsMarkupRef.value?.newState({
-            component: 'ComparativeBars',
-            props: {
-              code: teamHeader.value?.code,
-              type: teamHeader.value?.type,
-              chartType: 'markup'
-            }
-          })
-          ComparativeBarsRevenueRef.value?.newState({
-            component: 'ComparativeBars',
-            props: {
-              code: teamHeader.value?.code,
-              type: teamHeader.value?.type,
-              chartType: 'revenue'
-            }
-          })
-        } else {
-          ComparativeBarsProfitRef.value?.newState({ component: 'ComparativeBars', props: { chartType: 'profit', 'extern-no-data': true } })
-          ComparativeBarsMarkupRef.value?.newState({ component: 'ComparativeBars', props: { chartType: 'markup', 'extern-no-data': true } })
-          ComparativeBarsRevenueRef.value?.newState({ component: 'ComparativeBars', props: { chartType: 'revenue', 'extern-no-data': true } })
-        }
-      })
-    }
-    */
-
     const updateIfSeller = () => {
       if (user.value?.fgFuncao === 1) {
         update('loaded')
       }
     }
 
-    onMounted(() => updateIfSeller())
-    updateSelected.value = (status) => update(status)
+    onMounted(() => {
+      Promise.all([getFavoriteProducts(), refresh()])
+        .then(() => {
+          updateIfSeller()
+          watch(headerModels, () => update('loaded'), { deep: true })
+          watch(yearMonth, () => update('loaded'))
+          updateSelected.value = (status) => update(status)
+          update('loaded')
+        })
+    })
+
+    const customEvent = (event: { id: string, payload: any }) => {
+      switch (event.id) {
+        case 'COMPARATIVE_PERIODS_REMOVE_FAV': removeFavoriteProductSelected(); break
+        case 'COMPARATIVE_PERIODS_ON_CLICK_FAV': setFavoriteProduct(event.payload); break
+      }
+
+      if (event.id.startsWith('COMPARATIVE_PERIODS')) {
+        update('loaded')
+      }
+    }
 
     return {
+      customEvent,
       ComparativePeriodsRef,
-      // ComparativeBarsProfitRef,
-      // ComparativeBarsMarkupRef,
-      // ComparativeBarsRevenueRef,
       update,
       user,
       yearMonth,

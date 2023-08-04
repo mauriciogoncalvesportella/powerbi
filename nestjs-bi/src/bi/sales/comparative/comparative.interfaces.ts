@@ -9,7 +9,19 @@ export interface QueryResultOrdersByMonthExpanded {
   month: number,
   revenue: number,
   profit_value: number,
-  cost_value: number
+  cost_value: number,
+  products_count: number
+}
+
+export interface QueryResultOrdersByMonthExpandedProducts {
+  product_code: number,
+  product_label: string,
+  year_month: string,
+  month: number,
+  revenue: number,
+  profit_value: number,
+  cost_value: number,
+  products_count: number
 }
 
 export interface QueryResultOrdersByMonth {
@@ -17,10 +29,12 @@ export interface QueryResultOrdersByMonth {
   month: number,
   revenue: number,
   profit_value: number,
-  cost_value: number
+  cost_value: number,
+  products_count: number
 }
 
 export abstract class ComparativeRepository {
-  abstract ordersByMonthExpanded (teamCode: number, yearMonths: string[]): Promise<QueryResultOrdersByMonthExpanded[]>
-  abstract ordersByMonth (code: number, type: 'seller' | 'team', yearMonths: string[]): Promise<QueryResultOrdersByMonth[]>
+  abstract ordersByMonthExpanded (teamCode: number, yearMonths: string[], productCode?: number | null): Promise<QueryResultOrdersByMonthExpanded[]>
+  abstract ordersByMonth (code: number, type: 'seller' | 'team', yearMonths: string[], productCode?: number | null): Promise<QueryResultOrdersByMonth[]>
+  abstract ordersByMonthExpandedProducts (teamCode: number, yearMonths: string[], productCode?: number | null): Promise<QueryResultOrdersByMonthExpandedProducts[]>
 }
