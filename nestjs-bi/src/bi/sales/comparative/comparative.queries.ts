@@ -60,7 +60,7 @@ export class ComparativeQueries implements ComparativeRepository {
         from ${this.tenant}.vd_pedidos vp
           join ${this.tenant}.cad_vendedor cv on cv.cd = vp."cdVendedor"
           join ${this.tenant}.cad_equipe ce on ce.cd = cv."cdEquipe"
-          join (
+          left join (
             SELECT vpp."cdPedido", count(*) AS products_count
             FROM ${this.tenant}.vd_pedido_produto vpp
               JOIN ${this.tenant}.cad_produto cp on cp.cd = vpp."cdProduto"

@@ -41,6 +41,6 @@ deploy(){
 }
 
 build_quasarbi &
-build_nestjsbi &
+#build_nestjsbi &
 wait
 deploy
