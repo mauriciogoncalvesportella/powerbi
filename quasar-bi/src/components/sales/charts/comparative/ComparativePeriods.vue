@@ -125,9 +125,6 @@ const chartScaffold = {
       enabled: false
     },
     xaxis: {
-      labels: {
-        trim: true
-      },
       categories: [] as string[]
     }
   },
