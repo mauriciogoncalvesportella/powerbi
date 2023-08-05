@@ -60,7 +60,6 @@ export class ProfitQueries implements IProfitQueries {
       { yearMonth, date0: dates[0], date1: dates[1], sellerCode, teamId },
       {}
     )
-    console.log(parameters)
 
     return await this.connection.manager.query(query, parameters)
   }

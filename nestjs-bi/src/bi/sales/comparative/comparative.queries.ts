@@ -27,7 +27,7 @@ export class ComparativeQueries implements ComparativeRepository {
           COALESCE(sum(vp."vlCusto"), 0)::float as cost_value,
           COALESCE(sum(vp."vlLucro"), 0)::float as profit_value,
           COALESCE(sum(vp."vlProdutos" - vp."vlDesconto"), 0)::float as revenue,
-          COUNT(*)::int as products_count
+          COALESCE(sum(vpp."qtProduto"), 0)::int as products_count
         FROM ${this.tenant}.vd_pedidos VP
           JOIN ${this.tenant}.cad_vendedor cv on cv.cd = vp."cdVendedor"
           JOIN ${this.tenant}.cad_equipe ce on ce.cd = cv."cdEquipe"
@@ -61,7 +61,7 @@ export class ComparativeQueries implements ComparativeRepository {
           join ${this.tenant}.cad_vendedor cv on cv.cd = vp."cdVendedor"
           join ${this.tenant}.cad_equipe ce on ce.cd = cv."cdEquipe"
           left join (
-            SELECT vpp."cdPedido", count(*) AS products_count
+            SELECT vpp."cdPedido", sum(vpp."qtProduto") AS products_count
             FROM ${this.tenant}.vd_pedido_produto vpp
               JOIN ${this.tenant}.cad_produto cp on cp.cd = vpp."cdProduto"
             where cp."fgFavorito" = TRUE and (cast(:productCode as int) is NULL OR cp."cd" = :productCode)
@@ -92,7 +92,7 @@ export class ComparativeQueries implements ComparativeRepository {
           join ${this.tenant}.cad_vendedor cv on cv.cd = vp."cdVendedor"
           join ${this.tenant}.cad_equipe ce on ce.cd = cv."cdEquipe"
           left join (
-            SELECT vpp."cdPedido", count(*) AS products_count
+            SELECT vpp."cdPedido", sum(vpp."qtProduto") AS products_count
             FROM ${this.tenant}.vd_pedido_produto vpp
               JOIN ${this.tenant}.cad_produto cp on cp.cd = vpp."cdProduto"
             where cp."fgFavorito" = TRUE and (cast(:productCode as int) is NULL OR cp."cd" = :productCode)

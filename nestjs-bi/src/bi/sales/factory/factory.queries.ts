@@ -36,18 +36,19 @@ export class FactoryQueries implements IFactoryQueries {
         "${this.column}" as label,
         sum(vpp."vlTotal")::float as amount,
         count(*) as order_count
-        from ${this.tenant}.vd_pedidos vp
-          join ${this.tenant}.vd_pedido_produto vpp on vpp."cdPedido" = vp.cd
-          join ${this.tenant}.cad_vendedor cv on cv.cd = vp."cdVendedor"
-          join ${this.tenant}.cad_equipe ce on ce.cd = cv."cdEquipe" and ce."idEquipe" like :id
-          ${
-          this.column === 'nmCategoria'
-            ? `join ${this.tenant}.cad_produto cp on cp."cd" = vpp."cdProduto"
-               join ${this.tenant}.cad_categoria cc on cc."cd" = cp."cdCategoria"`
+      FROM ${this.tenant}.vd_pedidos vp
+        join ${this.tenant}.vd_pedido_produto vpp on vpp."cdPedido" = vp.cd
+        join ${this.tenant}.cad_vendedor cv on cv.cd = vp."cdVendedor"
+        join ${this.tenant}.cad_equipe ce on ce.cd = cv."cdEquipe" and ce."idEquipe" like :id
+        ${
+        this.column === 'nmCategoria'
+          ? `join ${this.tenant}.cad_produto cp on cp."cd" = vpp."cdProduto"
+             join ${this.tenant}.cad_categoria cc on cc."cd" = cp."cdCategoria"`
 
-            : `join ${this.tenant}.cad_fabrica cf on cf.cd = vpp."cdFabrica"`
-          }
+          : `join ${this.tenant}.cad_fabrica cf on cf.cd = vpp."cdFabrica"`
+        }
       WHERE vp."idMesAno" = :yearMonth
+        AND vp."fgSituacao" in (1,2,4,5)
       GROUP BY ${this.table}.cd, ${this.table}."${this.column}"
       HAVING SUM(vpp."vlTotal") > 0
       ORDER BY amount DESC
@@ -71,18 +72,20 @@ export class FactoryQueries implements IFactoryQueries {
             ${this.table}.cd as code,
             "${this.column}" as label,
             SUM(vpp."vlTotal") as amount
-            FROM ${this.tenant}.vd_pedido_produto vpp
-              join ${this.tenant}.vd_pedidos vp on vp.cd = vpp."cdPedido"
-              join ${this.tenant}.cad_vendedor cv on cv.cd = vp."cdVendedor"
-              ${
-              this.column === 'nmCategoria'
-                ? `join ${this.tenant}.cad_produto cp on cp."cd" = vpp."cdProduto"
-                   join ${this.tenant}.cad_categoria cc on cc."cd" = cp."cdCategoria"`
+          FROM ${this.tenant}.vd_pedido_produto vpp
+            join ${this.tenant}.vd_pedidos vp on vp.cd = vpp."cdPedido"
+            join ${this.tenant}.cad_vendedor cv on cv.cd = vp."cdVendedor"
+            ${
+            this.column === 'nmCategoria'
+              ? `join ${this.tenant}.cad_produto cp on cp."cd" = vpp."cdProduto"
+                 join ${this.tenant}.cad_categoria cc on cc."cd" = cp."cdCategoria"`
 
-                : `join ${this.tenant}.cad_fabrica cf on cf.cd = vpp."cdFabrica"`
-              }
-          where vp."idMesAno" = :yearMonth and (cv.cd = :cd or vp."cdVendedor2" = :cd) and vp."fgSituacao" in (1,2,4,5)
-          group by vpp."cdPedido", ${this.table}.cd, ${this.table}."${this.column}"
+              : `join ${this.tenant}.cad_fabrica cf on cf.cd = vpp."cdFabrica"`
+            }
+          WHERE vp."idMesAno" = :yearMonth
+            AND (cv.cd = :cd or vp."cdVendedor2" = :cd)
+            AND vp."fgSituacao" in (1,2,4,5)
+          GROUP BY vpp."cdPedido", ${this.table}.cd, ${this.table}."${this.column}"
         ) t
       group by t.code, t.label
       order by amount desc
@@ -111,12 +114,15 @@ export class FactoryQueries implements IFactoryQueries {
         sum(vpp."vlTotal")::float AS amount,
         sum(vpp."qtProduto") AS quantity,
         count(*) as order_count
-        FROM ${this.tenant}.vd_pedidos vp
-          JOIN ${this.tenant}.vd_pedido_produto vpp ON vpp."cdPedido" = vp.cd
-          JOIN ${this.tenant}.cad_produto cp ON cp.cd = vpp."cdProduto"
-          JOIN ${this.tenant}.cad_vendedor cv ON cv.cd = vp."cdVendedor"
-          JOIN ${this.tenant}.cad_equipe ce ON ce.cd = cv."cdEquipe"
-      WHERE (ce."idEquipe" similar to :teamId OR cv.cd = :sellerCode OR vp."cdVendedor2" = :sellerCode) AND vp."idMesAno" = :yearMonth AND cp."${this.productCodeColumn}" = :menuCode
+      FROM ${this.tenant}.vd_pedidos vp
+        JOIN ${this.tenant}.vd_pedido_produto vpp ON vpp."cdPedido" = vp.cd
+        JOIN ${this.tenant}.cad_produto cp ON cp.cd = vpp."cdProduto"
+        JOIN ${this.tenant}.cad_vendedor cv ON cv.cd = vp."cdVendedor"
+        JOIN ${this.tenant}.cad_equipe ce ON ce.cd = cv."cdEquipe"
+      WHERE (ce."idEquipe" similar to :teamId OR cv.cd = :sellerCode OR vp."cdVendedor2" = :sellerCode)
+        AND vp."idMesAno" = :yearMonth
+        AND cp."${this.productCodeColumn}" = :menuCode
+        AND vp."fgSituacao" in (1,2,4,5)
       GROUP BY cp.cd, cp."idProduto", cp."nmProduto"
       ORDER BY amount DESC
       `,
@@ -139,14 +145,19 @@ export class FactoryQueries implements IFactoryQueries {
           SUM(t."vlTotal") AS amount,
           COUNT(*) AS order_count,
           'team' AS type
-          FROM (
+          FROM
+            (
             SELECT vpp.*, ce.*
               FROM ${this.tenant}.vd_pedidos vp
                 JOIN ${this.tenant}.vd_pedido_produto vpp ON vpp."cdPedido" = vp.cd
                 JOIN ${this.tenant}.cad_produto cp ON cp."cd" = vpp."cdProduto"
                 JOIN ${this.tenant}.cad_vendedor cv ON cv.cd = vp."cdVendedor"
                 JOIN ${this.tenant}.cad_equipe ce ON ce.cd = cv."cdEquipe"
-            WHERE vp."idMesAno" = :yearMonth and  cp."${this.productCodeColumn}" = :menuCode and ce."idEquipe" like :teamId || '%') t
+            WHERE vp."idMesAno" = :yearMonth
+              AND cp."${this.productCodeColumn}" = :menuCode 
+              AND ce."idEquipe" like :teamId || '%'
+              AND vp."fgSituacao" in (1,2,4,5)
+            ) t
             JOIN ${this.tenant}.cad_equipe ce on ce."cdEquipePai" = :teamCode
           WHERE t."idEquipe" like ce."idEquipe" || '%'
           GROUP BY ce.cd, ce."idEquipe", ce."nmEquipe"
@@ -159,11 +170,14 @@ export class FactoryQueries implements IFactoryQueries {
           SUM(vpp."vlTotal") AS amount,
           count(*) AS order_count,
           'seller' AS type
-          FROM ${this.tenant}.vd_pedidos vp
-            JOIN ${this.tenant}.vd_pedido_produto vpp ON vpp."cdPedido" = vp.cd
-            JOIN ${this.tenant}.cad_produto cp ON cp."cd" = vpp."cdProduto"
-            JOIN ${this.tenant}.cad_vendedor cv ON cv.cd = vp."cdVendedor"
-        WHERE vp."idMesAno" = :yearMonth and cp."${this.productCodeColumn}" = :menuCode and cv."cdEquipe" = :teamCode
+        FROM ${this.tenant}.vd_pedidos vp
+          JOIN ${this.tenant}.vd_pedido_produto vpp ON vpp."cdPedido" = vp.cd
+          JOIN ${this.tenant}.cad_produto cp ON cp."cd" = vpp."cdProduto"
+          JOIN ${this.tenant}.cad_vendedor cv ON cv.cd = vp."cdVendedor"
+        WHERE vp."idMesAno" = :yearMonth
+          AND cp."${this.productCodeColumn}" = :menuCode
+          AND cv."cdEquipe" = :teamCode
+          AND vp."fgSituacao" in (1,2,4,5)
         GROUP BY cv.cd, cv."nmVendedor") result
       ORDER BY amount DESC
       `,
