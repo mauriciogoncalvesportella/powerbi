@@ -34,7 +34,7 @@ export interface QueryResultOrdersByMonth {
 }
 
 export abstract class ComparativeRepository {
-  abstract ordersByMonthExpanded (teamCode: number, yearMonths: string[], productCode?: number | null): Promise<QueryResultOrdersByMonthExpanded[]>
+  abstract ordersByMonthExpanded (code: number, type: 'seller' | 'team', yearMonths: string[], productCode?: number | null): Promise<QueryResultOrdersByMonthExpanded[]>
   abstract ordersByMonth (code: number, type: 'seller' | 'team', yearMonths: string[], productCode?: number | null): Promise<QueryResultOrdersByMonth[]>
-  abstract ordersByMonthExpandedProducts (teamCode: number, yearMonths: string[], productCode?: number | null): Promise<QueryResultOrdersByMonthExpandedProducts[]>
+  abstract ordersByMonthExpandedProducts (code: number, type: 'seller' | 'team', yearMonths: string[], productCode?: number | null): Promise<QueryResultOrdersByMonthExpandedProducts[]>
 }
