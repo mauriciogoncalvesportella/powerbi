@@ -14,7 +14,7 @@ export class PreviousExpandProductsUseCase {
 
   async execute (dto: ComparativeDTO): Promise<ComparativeOutputDTO> {
     const getYearMonths = await this.getYearMonthsService.execute(dto.frequency, dto.yearMonth, dto.iterations, dto.iteration_mode)
-    const orders = await this.queries.ordersByMonthExpandedProducts(dto.code, getYearMonths.yearMonths, dto.product_code)
+    const orders = await this.queries.ordersByMonthExpandedProducts(dto.code, dto.type, getYearMonths.yearMonths, dto.product_code)
     const labelsByCode: Record<number, string> = {}
     const comparativeMap: Record<string, Record<string, Record<'revenue'|'profit_value'|'cost_value'|'products_count', number>>> = {}
     const output: ComparativeOutputDTO = { labels: [], series: [] }

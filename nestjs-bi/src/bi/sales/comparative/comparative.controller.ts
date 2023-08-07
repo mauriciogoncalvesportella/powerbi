@@ -32,7 +32,7 @@ export class ComparativeController {
         if (query.expand_team && query.data_mode === 'products_count') {
           return await this.previousExpandProductsUseCase.execute(query)
         }
-        if (query.expand_team) {
+        if (query.expand_team && query.type === 'team') {
           return await this.previousExpandUseCase.execute(query)
         }
         return await this.previousUseCase.execute(query)
