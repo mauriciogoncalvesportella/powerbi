@@ -152,6 +152,10 @@ export default defineComponent({
           chart.options.chart.type = undefined
           chart.options.colors.push(ChartColors.revenue_goal)
         }
+
+        if (!isProspectChart.value && !dto.not_billed.some(it => it > 0)) {
+          chart.options.stroke.width = [0, 2]
+        }
       }
     }
 
