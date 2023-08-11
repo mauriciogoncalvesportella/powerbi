@@ -18,28 +18,29 @@ export class PreviousExpandProductsUseCase {
     const labelsByCode: Record<number, string> = {}
     const comparativeMap: Record<string, Record<string, Record<'revenue'|'profit_value'|'cost_value'|'products_count', number>>> = {}
     const output: ComparativeOutputDTO = { labels: [], series: [] }
-    const periods = Object.keys(getYearMonths.periods).sort()
+    const periodsKeys = Object.keys(getYearMonths.periods)
+    Period.sort(periodsKeys)
 
     for (let order of orders) {
       labelsByCode[order.product_code] = order.product_label
       const period = getYearMonths.periodFromYearMonth[order.year_month]
       if (!comparativeMap[order.product_code]) {
         comparativeMap[order.product_code] = {}
-        for (const periodKey of periods) {
+        for (const periodKey of periodsKeys) {
           comparativeMap[order.product_code][periodKey] = ComparativeUtils.initialize()
         }
       }
       ComparativeUtils.add(comparativeMap[order.product_code][period.key], order)
     }
 
-    for (const periodKey of periods) {
+    for (const periodKey of periodsKeys) {
       const period = Period.factory(periodKey)
       output.labels.push(`${period.year}/${getYearMonths.periodsLabelsMap[dto.frequency][period.period]}`)
     }
 
     for (const productCode in comparativeMap) {
       const values = []
-      for (const periodKey of periods) {
+      for (const periodKey of periodsKeys) {
         values.push(ComparativeUtils.getValue(dto.data_mode, comparativeMap[productCode][periodKey]))
       }
       const serie_name = labelsByCode[productCode]

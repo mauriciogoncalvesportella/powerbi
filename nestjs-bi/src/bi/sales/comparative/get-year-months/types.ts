@@ -33,6 +33,19 @@ export class Period {
   get key () {
     return `${this.year}.${this.period}`
   }
+
+  static sort (comparativeKeys: string[]): void {
+    comparativeKeys.sort((a, b) => {
+      const [a_year, a_period] = a.split('.')
+      const [b_year, b_period] = b.split('.')
+
+      if (a_year != b_year) {
+        return (parseInt(a_year) > parseInt(b_year)) ? 1 : -1
+      }
+
+      return parseInt(a_period) > parseInt(b_period) ? 1 : -1
+    })
+  }
 }
 
 export interface GetYearMonthsReturn {

@@ -48,7 +48,8 @@ export class PreviousExpandUseCase {
     for (const teamKey in comparativeMap) {
       const values = []
 
-      const periodsKeys = Object.keys(comparativeMap[teamKey]).sort()
+      const periodsKeys = Object.keys(comparativeMap[teamKey])
+      Period.sort(periodsKeys)
       for (const periodKey of periodsKeys) {
         values.push(ComparativeUtils.getValue(dto.data_mode, comparativeMap[teamKey][periodKey]))
       }

@@ -34,7 +34,7 @@ export class YearlyUseCase {
     }
 
     const periodsKeys = Object.keys(comparativeMap)
-    periodsKeys.sort()
+    Period.sort(periodsKeys)
 
     for (const periodKey of periodsKeys) {
       const monthValues = comparativeMap[periodKey]

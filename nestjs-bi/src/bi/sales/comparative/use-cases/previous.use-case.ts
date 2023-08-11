@@ -31,7 +31,7 @@ export class PreviousUseCase {
     }
 
     const periodsKeys = Object.keys(comparativeMap)
-    periodsKeys.sort()
+    Period.sort(periodsKeys)
 
     for (const periodKey of periodsKeys) {
       const period = Period.factory(periodKey)
