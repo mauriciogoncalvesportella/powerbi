@@ -1,182 +1,83 @@
 <template>
-  <div
-    class="column"
+  <q-table
+    id="linearity-q-table"
+    flat
+    bordered
+    row-key="customer_code"
+    virtual-scroll
+    hide-bottom
+    class="shadow-2 linearity-sticky-collumns"
+    v-model:pagination="pagination"
+    :rows-per-page-options="[0]"
+    :virtual-scroll-item-size="48"
+    :virtual-scroll-sticky-size-start="48"
+    :loading="loading"
+    :rows="data.data"
+    :columns="collumns"
+    no-data-label="Vazio"
+    @virtual-scroll="onLoad"
+    @request="onRequest"
   >
-    <div
-      class="col-12 full-width full-height"
-      style="position: relative"
-    >
-      <q-linear-progress
-        v-show="loading"
-        style="position: absolute; top: 0; z-index: 100"
-        color="white"
-        indeterminate
-      />
-    </div>
-    <div
-      class="col-12"
-    >
-      <q-infinite-scroll
-        :offset="250"
-        @load="onLoad"
+    <template v-slot:loading>
+      <q-inner-loading
+        :showing="true"
+        style="z-index: 100;"
       >
-        <q-markup-table
-          square
+        <q-spinner-gears size="50px" color="primary" />
+      </q-inner-loading>
+    </template>
+
+    <template v-slot:header-cell-current_amount="props">
+      <q-th
+        :props="props"
+      >
+        <!-- <q-icon name="lock_open" size="1.5em" /> -->
+        <q-icon
+          color="white"
+          size="1.5em"
+          class="cursor-pointer"
+          name="change_circle"
+          @click="toggleCurrentColorOption()"
         >
-          <thead
-            class="bg-primary text-white"
-          >
-            <tr>
-              <th
-                class="text-left"
-                width="55%"
-              >
-                <q-icon
-                  color="white"
-                  size="sm"
-                  class="cursor-pointer"
-                  :name="getIcon(0)"
-                  @click="onClickSort(0)"
-                />
-                Cliente
-              </th>
-              <th
-                class="text-right"
-                width="10%"
-              >
-                <q-icon
-                  color="white"
-                  size="sm"
-                  class="cursor-pointer"
-                  :name="getIcon(1)"
-                  @click="onClickSort(1)"
-                />
-                Total de Vendas
-              </th>
-              <th
-                class="text-right"
-                width="10%"
-              >
-                Ticket Médio
-              </th>
-              <th
-                v-for="month in monthLabels.slice().reverse()"
-                :key="month"
-                class="text-center"
-                width="5%"
-              >
-                {{ month }}.
-              </th>
-              <th
-                class="text-center"
-                width="20%"
-              >
-                <q-icon
-                  color="white"
-                  size="sm"
-                  class="cursor-pointer"
-                  name="change_circle"
-                  @click="toggleCurrentColorOption()"
-                >
-                  <q-tooltip>
-                    {{ currentColorOptionIndex === 1 ? 'Usar Valor Fixo' : 'Usar Proporcional' }}
-                  </q-tooltip>
-                </q-icon>
-                {{ currentColorOptionIndex === 0 ? 'Atual Fixo' : 'Atual Prop.' }}
-              </th>
-            </tr>
-          </thead>
-          <tbody
-            class="bg-grey-3"
-          >
-            <tr
-              v-for="(item, index) in data"
-              :key="item.customer_code"
-            >
-              <td
-                :class="`text-left ${item.status !== 1 ? 'text-red' : ''}`"
-                width="55%"
-              >
-                <span
-                  class="cursor-pointer"
-                  @click="$emit('open-customer-dialog', item.customer_code)"
-                >
-                  {{ item.customer_name }}
-                </span>
-                <q-chip
-                  label
-                >
-                  {{ item.seller_name }}
-                </q-chip>
-              </td>
-              <td
-                class="text-right cursor-pointer"
-                width="10%"
-                @click="$emit('open-order-dialog', { customerCode: item.customer_code })"
-              >
-                {{ number2currency(item.total_amount - item.current_amount, true) }}
-              </td>
-              <td
-                class="text-right"
-                width="10%"
-              >
-                {{ number2currency((item.total_amount - item.current_amount) / item.count, true) }}
-              </td>
-              <td
-                v-for="yearMonth in yearMonthArr.slice().reverse()"
-                :key="yearMonth"
-                class="text-center"
-                width="5%"
-              >
-                <q-icon
-                  name="circle"
-                  :id="`${item.customer_code}_${yearMonth}`"
-                  :color="color(yearMonth, item.monthly, item.create_date)"
-                  @click="emitOpenOrderDialog(index, item.customer_code, yearMonth)"
-                >
-                  <q-tooltip
-                    v-if="item.monthly[yearMonth]"
-                    class="bg-black"
-                  >
-                    {{ number2currency(item.monthly[yearMonth]) }}
-                  </q-tooltip>
-                </q-icon>
-              </td>
-              <td
-                class="text-center"
-                width="20%"
-              >
-                <q-icon
-                  name="circle"
-                  v-if="item.current_amount === 0"
-                  :color="getCurrentColor(item)"
-                />
-                <q-chip
-                  v-else
-                  dark
-                  dense
-                  square
-                  clickable
-                  :color="getCurrentColor(item)"
-                  @click="emitOpenOrderDialog(index, item.customer_code, currentYearMonth)"
-                >
-                  {{ number2currency(item.current_amount, true) }}
-                </q-chip>
-              </td>
-            </tr>
-          </tbody>
-        </q-markup-table>
-        <template
-          v-if="!loadedAll"
-          v-slot:loading
+          <q-tooltip>
+            {{ currentColorOptionIndex === 1 ? 'Usar Valor Fixo' : 'Usar Proporcional' }}
+          </q-tooltip>
+        </q-icon>
+        {{ currentColorOptionIndex === 0 ? 'Atual Fixo' : 'Atual Prop.' }}
+      </q-th>
+    </template>
+
+    <template v-slot:body-cell="{ value, rowIndex, col, row }">
+      <q-td
+        :class="`${color(rowIndex, col.name, row.monthly, row.create_date)} text-${col.align} ${col.classes}`"
+      >
+        <span
+          style="cursor: pointer"
+          @click="onClickCell(col, row)"
         >
-          <div class="row justify-center q-my-md">
-            <q-spinner-dots color="primary" size="40px" />
-          </div>
-        </template>
-      </q-infinite-scroll>
-    </div>
-  </div>
+          {{ value }}
+        </span>
+      </q-td>
+    </template>
+
+    <template v-slot:body-cell-current_amount="props">
+      <q-td
+        class="text-right"
+        :class="getColorCurrentAmount(props.row)"
+      >
+        {{ props.value }}
+      </q-td>
+    </template>
+
+    <template v-slot:no-data>
+      <div class="full-width row flex-center text-accent q-gutter-sm">
+        <q-icon size="2em" name="sentiment_dissatisfied" />
+        <span>
+          Sem dados
+        </span>
+      </div>
+    </template>
+  </q-table>
 </template>
 
 <script lang="ts">
@@ -185,11 +86,12 @@ import { LinearityPerCustomerDTO, LinearityPerCustomerItem } from 'src/dtos/sale
 import { useLinearity } from 'src/reactive/UseLinearity'
 import { useAuth } from 'src/reactive/UseAuth'
 import { DateUtils } from 'src/utils/date.utils'
+import { NumberUtils } from 'src/utils/number.utils'
 
 export default defineComponent({
   props: {
     data: {
-      type: Array as PropType<LinearityPerCustomerDTO>,
+      type: Object as PropType<LinearityPerCustomerDTO>,
       required: true
     },
     loading: {
@@ -209,63 +111,48 @@ export default defineComponent({
   ],
 
   setup (props, { emit }) {
+    const filter = ref('')
+    const pagination = ref({ sortBy: 'customer_name', descending: false, page: 1, rowsPerPage: 100, rowsNumber: 0 })
     const currentYearMonth = useAuth().currentYearMonth
-    const closeDay = useAuth().user.value?.dtFechamento
-    const monthRatio = DateUtils.monthRatio(undefined, undefined, currentYearMonth.value, closeDay)
     const tooltipValue = ref(-1)
-    const { monthLabels, yearMonthArr, toggleSortOption, sortOptionIndex, sortIndex, setSort, toggleCurrentColorOption, currentColorOptionIndex } = useLinearity()
-    const onLoad = (index: number, done: any) => emit('on-load', done) // loadData().then(() => done())
+    const { monthLabels, yearMonthArr, toggleCurrentColorOption, currentColorOptionIndex, sortDescending, sortByColumn, getColorCurrentAmount } = useLinearity()
+    // const onLoad = (index: number, done: any) => emit('on-load', done) // loadData().then(() => done())
 
-    const color = (yearMonth: string, monthlyObj: Record<string, { cost_value: number, profit_value: number, not_billed: number, billed: number }>, createDate: string) => {
-      if (monthlyObj[yearMonth]) {
-        return 'green'
-      } else if (yearMonth < createDate) {
-        return 'black'
-      }
-      return 'red'
-    }
-
-    const getIcon = (index: number) => {
-      if (index === sortIndex.value) {
-        return sortOptionIndex.value === 0 ? 'arrow_upward' : 'arrow_downward'
-      }
-      return 'mobiledata_off'
-    }
-
-    const onClickSort = (index: number) => {
-      if (sortIndex.value !== index) {
-        setSort(index)
-      } else {
-        toggleSortOption()
+    const onLoad = ({ to }: any) => {
+      const lastIndex = props.data.data.length - 1
+      if (props.loading !== true && to === lastIndex) {
+        const done = () => 0
+        emit('on-load', done)
       }
     }
 
-    const getCurrentColor = (linearity: LinearityPerCustomerItem): string => {
-      const _monthRatio = currentColorOptionIndex.value === 1
-        ? monthRatio
-        : 1
-      const average = ((linearity.total_amount - linearity.current_amount) / linearity.count) * _monthRatio
-      const current = linearity.current_amount
-      const radio = current / average
+    const yearMonthIds = yearMonthArr.value
+    const onRequest = (params: any) => {
+      if (!props.loading) {
+        const { sortBy, descending } = params.pagination
 
-      if (radio >= 1.2) {
-        return 'blue'
+        // if (sortBy.startsWith('month')) {
+        //   const [, index] = sortBy.split('_')
+        //   sortByColumn.value = yearMonthIds[parseInt(index)]
+        //   console.log(yearMonthArr.value, sortByColumn.value)
+        //   pagination.value.sortBy = sortBy
+        // } else {
+        //   sortByColumn.value = sortBy ?? 'customer_name'
+        //   pagination.value.sortBy = sortByColumn.value
+        // }
+        sortByColumn.value = sortBy ?? 'customer_name'
+        sortDescending.value = sortBy ? descending : false
+        pagination.value.descending = sortDescending.value
+        pagination.value.sortBy = sortByColumn.value
+
+        const done = (data: LinearityPerCustomerDTO) => { pagination.value.rowsNumber = data.total }
+        emit('on-load', { done, clear: true })
       }
-
-      if (radio >= 0.8) {
-        return 'green'
-      }
-
-      if (radio >= 0.5) {
-        return 'orange'
-      }
-
-      return 'red'
     }
 
     const emitOpenOrderDialog = (customerIndex: number, customerCode: number, start?: string, end?: string) => {
       if (start && !end) {
-        if (!props.data[customerIndex].monthly[start]) {
+        if (!props.data.data[customerIndex].monthly[start]) {
           return
         }
       }
@@ -277,23 +164,189 @@ export default defineComponent({
       })
     }
 
+    const mids = yearMonthArr.value // Month Ids
+    const mls = monthLabels.value // Month Labels
+
+    const color = (rowIndex: number, yearMonthColumn: string, monthlyObj: Record<string, number>, createDate: string) => {
+      if (!yearMonthColumn.includes('-')) {
+        return (rowIndex % 2 === 0) ? 'bg-grey-3' : 'bg-white'
+      }
+
+      if (monthlyObj[yearMonthColumn] && monthlyObj[yearMonthColumn] > 0) {
+        return 'bg-green-2'
+      } else if (yearMonthColumn < createDate) {
+        return 'bg-grey-5'
+      }
+
+      return 'bg-red-3'
+    }
+
+    const onClickCell = (col: any, row: LinearityPerCustomerItem) => {
+      if (col.name === 'customer_name') {
+        return emit('open-customer-dialog', row.customer_code)
+      }
+
+      if (col.name === 'total_amount' && NumberUtils.isNotZero(row.total_amount)) {
+        return emit('open-order-dialog', { customerCode: row.customer_code })
+      }
+
+      if (col.name === 'current_amount' && NumberUtils.isNotZero(row.current_amount)) {
+        return emit('open-order-dialog', { customerCode: row.customer_code, start: currentYearMonth.value })
+      }
+
+      if (DateUtils.isYearMonth(col.name) && NumberUtils.isNotZero(row.monthly[col.name])) {
+        const yearMonth = col.name
+        return emit('open-order-dialog', { customerCode: row.customer_code, start: yearMonth, end: null })
+      }
+    }
+
+    const collumns = [
+      {
+        name: 'customer_name',
+        align: 'left',
+        label: 'Cliente',
+        field: (row: LinearityPerCustomerItem) => row.customer_name,
+        headerStyle: 'width: 100%',
+        classes: 'ellipsis',
+        style: 'width: 100%',
+        sortable: true
+      },
+      {
+        name: 'total_amount',
+        label: 'Total',
+        field: (row: LinearityPerCustomerItem) => row.total_amount,
+        format: (val: number) => NumberUtils.number2currency(val, true),
+        headerStyle: 'width: 100px;',
+        style: 'width: 100px',
+        sortable: true
+      },
+      {
+        name: 'average_amount',
+        label: 'Ticket Médio',
+        field: (row: LinearityPerCustomerItem) => (row.total_amount - row.current_amount) / row.count,
+        format: (val: number) => NumberUtils.number2currency(val, true),
+        headerStyle: 'width: 120px',
+        style: 'width: 120px',
+        sortable: true
+      },
+      {
+        name: yearMonthIds[0],
+        align: 'center',
+        label: mls[0],
+        field: (row: LinearityPerCustomerItem) => row.monthly[mids[0]],
+        format: (val: number) => NumberUtils.number2currency(val, true),
+        headerStyle: 'width: 88px',
+        sortable: true
+      },
+      {
+        name: yearMonthIds[1],
+        align: 'center',
+        label: mls[1],
+        field: (row: LinearityPerCustomerItem) => row.monthly[mids[1]],
+        format: (val: number) => NumberUtils.number2currency(val, true),
+        headerStyle: 'width: 88px',
+        sortable: true
+      },
+      {
+        name: yearMonthIds[2],
+        align: 'center',
+        label: mls[2],
+        field: (row: LinearityPerCustomerItem) => row.monthly[mids[2]],
+        format: (val: number) => NumberUtils.number2currency(val, true),
+        headerStyle: 'width: 88px',
+        sortable: true
+      },
+      {
+        name: yearMonthIds[3],
+        align: 'center',
+        label: mls[3],
+        field: (row: LinearityPerCustomerItem) => row.monthly[mids[3]],
+        format: (val: number) => NumberUtils.number2currency(val, true),
+        headerStyle: 'width: 88px',
+        sortable: true
+      },
+      {
+        name: yearMonthIds[4],
+        align: 'center',
+        label: mls[4],
+        field: (row: LinearityPerCustomerItem) => row.monthly[mids[4]],
+        format: (val: number) => NumberUtils.number2currency(val, true),
+        headerStyle: 'width: 88px',
+        sortable: true
+      },
+      {
+        name: 'current_amount',
+        label: 'Atual',
+        field: (row: LinearityPerCustomerItem) => row.current_amount,
+        format: (val: number) => NumberUtils.number2currency(val, true),
+        headerStyle: 'width: 120px',
+        sortable: true
+      }
+    ]
+
     return {
-      sortIndex,
-      setSort,
-      onClickSort,
-      getIcon,
-      toggleSortOption,
-      onLoad,
+      filter,
       monthLabels,
-      color,
-      getCurrentColor,
       tooltipValue,
       currentYearMonth,
+      currentColorOptionIndex,
+      yearMonthArr,
+      collumns,
+      pagination,
+      onRequest,
+      onClickCell,
       emitOpenOrderDialog,
       toggleCurrentColorOption,
-      currentColorOptionIndex,
-      yearMonthArr
+      color,
+      getColorCurrentAmount,
+      onLoad
     }
   }
 })
 </script>
+
+<style lang="scss">
+#linearity-q-table {
+  /* height or max-height is important */
+  height: calc(100vh - 68px);
+  border-radius: 0;
+  border: none;
+
+  table {
+    table-layout: fixed;
+    width: 100%;
+    min-width: 1100px;
+  }
+
+  thead {
+    position: sticky;
+    top: 0px;
+    z-index: 101;
+    background-color: $primary; /* Adapte a cor conforme necessário */
+    color: white; /* Cor do texto no cabeçalho */
+  }
+
+  .q-table__top {
+    background-color: white;
+  }
+
+  .q-table__middle {
+    overflow-y: scroll;
+  }
+
+  .q-table__bottom,
+  thead tr:first-child th {
+    /* bg color is important for th; just specify one */
+    background-color: $primary;
+    color: white;
+  }
+
+  th:first-child,
+  td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background-color: white;
+  }
+}
+</style>

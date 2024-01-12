@@ -1,22 +1,19 @@
 <template>
-  <div>
-    <component
-      v-show="!loading && !disableChart"
-      ref="chart"
-      :is="currentChartState.component"
-      :key="key"
-      v-bind="currentChartState.props"
-      @custom-event="$emit('custom-event', $event)"
-      @next-state-year-month="nextStateYearMonth($event)"
-      @nextState="nextState($event)"
-      @newState="newState($event)"
-      @backState="backState"
-      @dataSelect="dataSelect"
-    />
-    <chart-skeleton-loading
-      v-show="loading"
-    />
-  </div>
+  <component
+    ref="chart"
+    :is="currentChartState.component"
+    :key="key"
+    v-bind="currentChartState.props"
+    @custom-event="$emit('custom-event', $event)"
+    @next-state-year-month="nextStateYearMonth($event)"
+    @nextState="nextState($event)"
+    @newState="newState($event)"
+    @backState="backState"
+    @dataSelect="dataSelect"
+  />
+  <!--chart-skeleton-loading
+    v-show="loading"
+  /-->
 </template>
 
 <script lang="ts">

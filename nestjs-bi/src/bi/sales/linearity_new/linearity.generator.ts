@@ -2,7 +2,7 @@ import {Inject, Injectable} from "@nestjs/common";
 import {format} from "date-fns";
 import {create} from "lodash";
 import {RequestMetadata} from "src/shared/request-metadata.provider";
-import {ILinearityGenerator, PerCustomerLinearityDTO, ResumeLinearityDTO, ResumePotentitalLinearityDTO} from "./linearity.controller";
+import {ILinearityGenerator, PerCustomerLinearityDTO, PerCustomerLinearityItem, ResumeLinearityDTO, ResumePotentitalLinearityDTO} from "./linearity.controller";
 import {LinearityQueries} from './linearity.queries'
 const _ = require('lodash')
 
@@ -147,10 +147,9 @@ export class LinearityGenerator implements ILinearityGenerator {
     return resume
   }
 
-  async perCustomer (cd: number, type: 'seller' | 'team', yearMonthInterval: string[], countFilter: number, sortColumn: string, sortType: string, offset: number, limit: number): Promise<PerCustomerLinearityDTO[]> {
+  async perCustomer (cd: number, type: 'seller' | 'team', yearMonthInterval: string[], countFilter: number, sortColumn: string, sortType: string, offset: number, limit: number): Promise<PerCustomerLinearityDTO> {
     const currentYearMonth = await this.requestMetadata.getYearMonth(new Date())
     const queryResult = await this.queries.monthPerCustomer(cd, type, yearMonthInterval)
-  
 
     const transformMonthly = (monthly: Record<string, any>) => {
       const ret = {}
@@ -160,7 +159,7 @@ export class LinearityGenerator implements ILinearityGenerator {
       return ret
     }
 
-    const aggregate: PerCustomerLinearityDTO[] = (await this.aggregate(queryResult))
+    const aggregate: PerCustomerLinearityItem[] = (await this.aggregate(queryResult))
       .filter(agg => agg.start_month < currentYearMonth)
       .map(agg => ({
         customer_code: agg.customer_code,
@@ -174,18 +173,28 @@ export class LinearityGenerator implements ILinearityGenerator {
         current_amount: (agg.monthly[currentYearMonth]?.not_billed ?? 0) + (agg.monthly[currentYearMonth]?.billed ?? 0),
         monthly: transformMonthly(agg.monthly)
       }))
+      .filter(agg => countFilter === -1 || (countFilter === 0 && agg.new_customer) || (agg.count === countFilter && !agg.new_customer))
+
+    const sort = sortType === 'ASC' ? 1 : -1
+    const isYearMonthSort = sortColumn.match(/^\d{4}-\d{2}$/)
 
     aggregate.sort((a, b) => {
-      const sort = sortType === 'ASC' ? 1 : -1
-      if (sortColumn === 'customer') {
-        return sort * a.customer_name.localeCompare(b.customer_name)
+      if (isYearMonthSort) {
+        return sort * ((a.monthly[sortColumn] ?? 0) - (b.monthly[sortColumn] ?? 0))
+      } if (sortColumn === 'customer_name') {
+        return sort * a.customer_name.trim().localeCompare(b.customer_name.trim())
+      } else if (sortColumn === 'total_amount') {
+        return sort * (a.total_amount - b.total_amount)
+      } else if (sortColumn === 'current_amount') {
+        return sort * (a.current_amount - b.current_amount)
+      } else if (sortColumn === 'average_amount') {
+        return sort * (((a.total_amount - a.current_amount) / a.count) - ((b.total_amount - b.current_amount) / b.count))
       }
-      return sort * ((a.total_amount - a.current_amount) -
-                     (b.total_amount - b.current_amount))
     })
 
-    return aggregate
-      .filter(agg => countFilter === -1 || (countFilter === 0 && agg.new_customer) || (agg.count === countFilter && !agg.new_customer))
-      .slice(offset, offset + limit)
+    return {
+      total: aggregate.length, 
+      data: aggregate.slice(offset, offset + limit),
+    }
   }
 }

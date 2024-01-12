@@ -1,5 +1,6 @@
 <template>
-  <q-btn-dropdown
+  <div> oi </div>
+  <!-- <q-btn-dropdown
     split
     push
     color="primary"
@@ -23,30 +24,33 @@
         </q-item-section>
       </q-item>
     </q-list>
-  </q-btn-dropdown>
+  </q-btn-dropdown> -->
 </template>
 
 <script lang="ts">
-import { useLinearity } from 'src/reactive/UseLinearity'
-import { defineComponent, computed } from 'vue'
-export default defineComponent({
-  setup () {
-    const {
-      sortIndex,
-      sortOptionIndex,
-      toggleSortOption,
-      setSort,
-      sortOptions
-    } = useLinearity()
+import { defineComponent } from 'vue'
 
-    return {
-      sortIndex,
-      toggleSortOption,
-      setSort,
-      sortOptions,
-      icon: computed(() => sortOptionIndex.value === 0 ? 'arrow_upward' : 'arrow_downward'),
-      labels: computed(() => ['Cliente', 'Faturamento'])
-    }
-  }
-})
+export default defineComponent({})
+// import { useLinearity } from 'src/reactive/UseLinearity'
+// import { defineComponent, computed } from 'vue'
+// export default defineComponent({
+//   setup () {
+//     const {
+//       sortIndex,
+//       sortOptionIndex,
+//       toggleSortOption,
+//       setSort,
+//       sortOptions
+//     } = useLinearity()
+
+//     return {
+//       sortIndex,
+//       toggleSortOption,
+//       setSort,
+//       sortOptions,
+//       icon: computed(() => sortOptionIndex.value === 0 ? 'arrow_upward' : 'arrow_downward'),
+//       labels: computed(() => ['Cliente', 'Faturamento'])
+//     }
+//   }
+// })
 </script>

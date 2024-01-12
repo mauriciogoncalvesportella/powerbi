@@ -8,6 +8,7 @@
     :no-data="noData || externNoData"
     :error="error"
     :state-count="stateCount"
+    :flex="flex"
     filter-disabled
     @data-point-selection="nextStateFromChart"
   >
@@ -71,12 +72,12 @@ export default defineComponent({
     type: { type: String, required: false },
     stateCount: { type: Number, default: 0 },
     externNoData: { type: Boolean, default: false },
-    externLoading: { type: Boolean, default: false }
+    externLoading: { type: Boolean, default: false },
+    flex: { type: Boolean, default: true }
   },
 
   setup (props) {
     const chartComponent = ref(null) as Ref<any>
-
     const currentYearMonth = useAuth().currentYearMonth
     const compareDate = currentYearMonth.value ? new Date(`${currentYearMonth.value}-01 00:00`) : new Date()
     const endYearMonth = format(addMonths(compareDate, -1), 'yyyy-MM')
@@ -125,7 +126,8 @@ export default defineComponent({
       }
     }
 
-    const { setCountFilter } = useLinearity()
+    const { setCountFilter, mobileCurrentTab } = useLinearity()
+
     const dateLabel = computed(() => {
       const start = format(new Date(`${startYearMonth}-01`), 'LLLL', { locale: ptBR })
       const end = format(new Date(`${endYearMonth}-01`), 'LLLL', { locale: ptBR })
@@ -139,6 +141,7 @@ export default defineComponent({
 
     const nextStateFromChart = (event: any, chartContext: any, { dataPointIndex }: any) => {
       setCountFilter(chartData.value?.count[dataPointIndex] ?? -1)
+      mobileCurrentTab.value = 'list'
     }
 
     return {

@@ -1,11 +1,9 @@
 <template>
   <div
     v-if="!error"
-    class="full-width full-height"
   >
     <linearity-table
       v-if="$q.screen.gt.sm"
-      class="gt-sm"
       :data="data"
       :loading="loading"
       :loadedAll="loadedAll"
@@ -13,11 +11,17 @@
       @open-customer-dialog="openCustomerDialog"
       @open-order-dialog="openOrderDialog"
     />
-    <linearity-list
-      v-else
+    <!-- <linearity-list
       :data="data"
       :loading="loading"
       :loadedAll="loadedAll"
+      @on-load="onLoad"
+      @open-customer-dialog="openCustomerDialog"
+      @open-order-dialog="openOrderDialog"
+    /> -->
+    <linearity-virtual-list
+      v-else
+      :data="data"
       @on-load="onLoad"
       @open-customer-dialog="openCustomerDialog"
       @open-order-dialog="openOrderDialog"
@@ -33,36 +37,45 @@
 </template>
 
 <script lang="ts">
+import LinearityTable from './LinearityTable.vue'
+import LinearityList from './LinearityList.vue'
+import LinearityVirtualList from './LinearityVirtualList.vue'
+import CustomerDialog from 'src/components/sales/CustomerDialog.vue'
+import OrderInfoDialog from '../OrderInfoDialog.vue'
+import { GetOrderListFromCustomer, GlobalOrderInfoDialog } from 'src/reactive/UseGlobalDialogs'
 import { useLinearity } from 'src/reactive/UseLinearity'
-import { defineComponent, ref, Ref, watch } from 'vue'
+import { computed, defineComponent, ref, Ref, watch } from 'vue'
 import { format, addMonths } from 'date-fns'
 import { LinearityPerCustomerDTO } from 'src/dtos/sales/linearity.dto'
 import { apiProvider } from 'src/boot/axios'
 import { useTeamDropdown } from 'src/reactive/UseTeamDropdown'
 import { useAuth } from 'src/reactive/UseAuth'
-import LinearityTable from './LinearityTable.vue'
-import LinearityList from './LinearityList.vue'
-import CustomerDialog from 'src/components/sales/CustomerDialog.vue'
-import OrderInfoDialog from '../OrderInfoDialog.vue'
-import { GetOrderListFromCustomer, GlobalOrderInfoDialog } from 'src/reactive/UseGlobalDialogs'
 
 export default defineComponent({
-  components: { LinearityTable, LinearityList, CustomerDialog, OrderInfoDialog },
+  props: {
+    forceLoading: {
+      type: Boolean,
+      default: false
+    }
+  },
 
-  setup () {
+  components: { LinearityTable, LinearityList, CustomerDialog, OrderInfoDialog, LinearityVirtualList },
+
+  setup (props) {
     const refCustomerDialog = ref(null) as Ref<any>
     const refOrderInfoDialog = ref(null) as Ref<any>
-    const { countFilter, sortColumn, sortType, currentColorOptionIndex } = useLinearity()
+    const { countFilter, sortByColumn, sortType, currentColorOptionIndex } = useLinearity()
     const { team: teamHeader } = useTeamDropdown()
     const currentYearMonth = useAuth().currentYearMonth
     const currentDate = new Date(`${currentYearMonth.value}-01 00:00`)
     const endYearMonth = format(addMonths(currentDate, 0), 'yyyy-MM')
     const startYearMonth = format(addMonths(currentDate, -5), 'yyyy-MM')
     const loadedAll = ref(false)
-    const data: Ref<LinearityPerCustomerDTO> = ref([])
+    const data: Ref<LinearityPerCustomerDTO> = ref({ data: [], total: 0 })
     const error = ref(false)
     const noData = ref(false)
-    const loading = ref(false)
+    const loading = ref(true)
+
     let offset = 0
 
     const getData = async (): Promise<LinearityPerCustomerDTO> => {
@@ -73,9 +86,9 @@ export default defineComponent({
           start: startYearMonth,
           end: endYearMonth,
           'count-filter': countFilter.value,
-          'sort-column': sortColumn.value,
+          'sort-column': sortByColumn.value ?? 'total_amount',
           'sort-type': sortType.value,
-          limit: 50,
+          limit: 100,
           offset
         }
       })
@@ -83,33 +96,31 @@ export default defineComponent({
     }
 
     const loadData = async (clear: boolean = false) => {
-      if (!loading.value) {
-        error.value = false
-        noData.value = false
+      error.value = false
+      noData.value = false
 
-        if (clear) {
-          offset = 0
-          loadedAll.value = false
-          data.value = []
-        }
+      if (clear) {
+        offset = 0
+        loadedAll.value = false
+        data.value = { total: 0, data: [] }
+      }
 
-        if (!loadedAll.value) {
-          try {
-            loading.value = true
-            const values = await getData()
-            offset += values.length
-            if (values.length < 50) {
-              loadedAll.value = true
-            }
-            data.value.push(...values)
-          } catch (err: any) {
-            error.value = true
-          } finally {
-            loading.value = false
+      if (!loadedAll.value) {
+        try {
+          loading.value = true
+          const values = await getData()
+          offset += values.data.length
+          if (values.data.length < 100) {
+            loadedAll.value = true
           }
-        } else {
+          data.value.data.push(...values.data)
+        } catch (err: any) {
+          error.value = true
+        } finally {
           loading.value = false
         }
+      } else {
+        loading.value = false
       }
     }
 
@@ -127,17 +138,24 @@ export default defineComponent({
       GlobalOrderInfoDialog.open(new GetOrderListFromCustomer(customerCode, _start, _end))
     }
 
-    const onLoad = (done: any) => loadData().then(() => done())
+    const onLoad = async (params: { done: any, clear: boolean }) => {
+      if (teamHeader.value?.code) {
+        await loadData(params.clear)
+        if (typeof params.done === 'function') {
+          params.done(data.value)
+        }
+      }
+    }
     watch(teamHeader, () => loadData(true))
     watch(countFilter, () => loadData(true))
-    watch(sortColumn, () => loadData(true))
-    watch(sortType, () => loadData(true))
+    // watch(sortByColumn, () => loadData(true))
+    // watch(sortType, () => loadData(true))
     watch(currentColorOptionIndex, () => loadData(true))
 
     return {
       openOrderDialog,
       openCustomerDialog,
-      loading,
+      loading: computed(() => props.forceLoading || loading.value),
       data,
       onLoad,
       refCustomerDialog,

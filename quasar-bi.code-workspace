@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "quasar-bi"
+		},
+		{
+			"path": "nestjs-bi"
+		},
+		{
+			"path": "backup"
+		}
+	],
+	"settings": {}
+}

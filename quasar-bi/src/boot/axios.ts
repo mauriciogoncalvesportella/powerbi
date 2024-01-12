@@ -6,8 +6,7 @@ import { useAuth } from 'src/reactive/UseAuth'
 let url: string
 
 if (window.location.host.includes('8080')) {
-  url = 'http://localhost:3000/api'
-  // url = 'http://192.168.254.130:3000/api'
+  url = `http://${window.location.hostname}:3000/api`
 } else {
   url = 'https://bi.datacompanysistemas.com/api'
 }

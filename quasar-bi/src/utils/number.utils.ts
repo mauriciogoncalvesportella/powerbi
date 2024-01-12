@@ -24,10 +24,31 @@ export namespace NumberUtils {
   }
 
   export function number2currency (num: number | string, simple: boolean = false) {
-    const n: number = typeof num === 'string' ? parseInt(num) : num
+    const n: number = num != null
+      ? typeof num === 'string' ? parseInt(num) : num
+      : 0
+
     if (simple) {
       return n.toLocaleString('pt-br', { style: 'currency', currency: 'BRL' }).replace('R$', '')
     }
+
     return n.toLocaleString('pt-br', { style: 'currency', currency: 'BRL' })
+  }
+
+  export function isNotZero (x: any | null): boolean {
+    if (x == null) {
+      return false
+    }
+
+    let n: number = 0
+    if (typeof x === 'string') {
+      n = parseInt(x)
+    } else if (typeof x === 'number') {
+      n = x
+    } else {
+      n = 0
+    }
+
+    return n !== 0
   }
 }

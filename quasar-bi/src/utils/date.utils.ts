@@ -151,4 +151,8 @@ export namespace DateUtils {
     const difference = Math.max(1, differenceInBusinessDays(addDays(end, 1), init))
     return difference / totalDaysInYearMonth(yearMonth as string, closeDay, true)
   }
+
+  export function isYearMonth (yearMonth: string): boolean {
+    return /^\d{4}-\d{2}$/.test(yearMonth)
+  }
 }

@@ -12,6 +12,7 @@
   "dependencies": {
     "apexcharts": "^3.27.1",
     "axios": "^0.21.1",
+    "babel-loader": "^9.1.3",
     "clear-cache": "^1.1.0",
     "core-js": "^3.6.5",
     "date-fns": "^2.22.1",

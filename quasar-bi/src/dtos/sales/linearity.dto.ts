@@ -24,4 +24,7 @@ export interface LinearityPerCustomerItem {
   monthly: Record<string, number>
 }
 
-export type LinearityPerCustomerDTO = LinearityPerCustomerItem[]
+export type LinearityPerCustomerDTO = {
+  data: LinearityPerCustomerItem[],
+  total: number
+}

@@ -55,7 +55,7 @@ export const useSimpleBars = <T extends IBaseChart>(
   nextGetDataFunction?: (dto: T) => void
 ) => {
   const noData = ref(false) as Ref<boolean>
-  const loading = ref(false) as Ref<boolean>
+  const loading = ref(true) as Ref<boolean>
   const error = ref(undefined) as Ref<string | undefined>
   const chartData = ref({
     values: [],

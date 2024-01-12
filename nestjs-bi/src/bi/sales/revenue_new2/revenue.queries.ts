@@ -52,7 +52,9 @@ export class RevenueQueries implements IRevenueQueries {
       { yearMonth, date0: dates[0], date1: dates[1], sellers, dailyGoal },
       {}
     )
-    return await this.manager.query(query, parameters)
+
+    const output = await this.manager.query(query, parameters)
+    return output
   }
 
   public async dailyCumulative (sellers: number[], yearMonth: string, dailyGoal: number, monthlyGoal: number): Promise<QueryResultDailyRevenue[]> {

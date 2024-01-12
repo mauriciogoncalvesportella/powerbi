@@ -61,7 +61,8 @@ export class ProfitQueries implements IProfitQueries {
       {}
     )
 
-    return await this.connection.manager.query(query, parameters)
+    const output = await this.connection.manager.query(query, parameters)
+    return output
   }
 
   async dailyCumulative (cd: number, type: 'team' | 'seller', yearMonth: string): Promise<QueryResultDailyProfit[]> {

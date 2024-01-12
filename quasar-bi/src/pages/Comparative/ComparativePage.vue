@@ -7,34 +7,29 @@
         <div
           class="col-12 col-md-4 col-lg-3"
         >
-            <comparative-dropdown />
+          <comparative-dropdown />
         </div>
       </sales-header>
     </responsive-header>
 
-    <transition
-      appear
-      enter-active-class="animated fadeIn"
+    <div
+      class="row justify-center q-mt-md q-col-gutter-sm q-mx-md"
     >
       <div
-        v-show="teamHeaderStatus !== 'loading'"
-        class="row justify-center q-mt-md q-col-gutter-sm q-mx-md"
+        class="col-12 col-md-8 col-lg-6"
       >
-        <div
-          class="col-12 col-md-8 col-lg-6"
-        >
-          <chart-manager
-            ref="ComparativePeriodsRef"
-            startComponent="ComparativePerids"
-            :startProps="{
-              'extern-no-data': true,
-              chartType: 'revenue'
-            }"
-            @custom-event="customEvent"
-          />
-        </div>
+        <chart-manager
+          ref="ComparativePeriodsRef"
+          startComponent="ComparativePeriods"
+          :startProps="{
+            'extern-no-data': false,
+            'extern-loading': true,
+            chartType: 'revenue'
+          }"
+          @custom-event="customEvent"
+        />
       </div>
-    </transition>
+    </div>
   </q-page>
 </template>
 

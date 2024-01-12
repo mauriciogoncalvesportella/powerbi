@@ -8,6 +8,7 @@
     :no-data="noData || externNoData"
     :error="error"
     :state-count="stateCount"
+    :flex="flex"
     filter-disabled
     @data-point-selection="nextStateFromChart"
   >
@@ -71,7 +72,8 @@ export default defineComponent({
     type: { type: String, required: false },
     stateCount: { type: Number, default: 0 },
     externLoading: { type: Boolean, default: false },
-    externNoData: { type: Boolean, default: false }
+    externNoData: { type: Boolean, default: false },
+    flex: { type: Boolean, default: true }
   },
 
   setup (props) {
@@ -104,7 +106,7 @@ export default defineComponent({
       seriesGoalTitle
     } = useSimpleBars<LinearityResumeDTO>(getDataFunction)
 
-    const { setCountFilter } = useLinearity()
+    const { setCountFilter, mobileCurrentTab } = useLinearity()
     const dateLabel = computed(() => {
       const start = format(new Date(`${startYearMonth}-01`), 'LLLL', { locale: ptBR })
       const end = format(new Date(`${endYearMonth}-01`), 'LLLL', { locale: ptBR })
@@ -118,6 +120,7 @@ export default defineComponent({
 
     const nextStateFromChart = (event: any, chartContext: any, { dataPointIndex }: any) => {
       setCountFilter(chartData.value?.count[dataPointIndex] ?? -1)
+      mobileCurrentTab.value = 'list'
     }
 
     const getLabel = (cd: number) => {

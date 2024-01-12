@@ -1,6 +1,7 @@
 <template>
   <q-card
     square
+    :style="flex ? 'display: flex; flex-direction: column; height: 100%;' : ''"
   >
     <q-toolbar class="bg-primary text-white shadow-2">
       <q-toolbar-title
@@ -44,74 +45,70 @@
         </q-btn>
       </div>
     </q-toolbar>
-    <div
-      style="position: relative; padding-top: 64%"
-    >
-      <div
-        class="full-width full-height "
-        style="position: absolute; top: 0"
+    <div :style="flex ? 'flex-grow: 1; position: relative;' : (error || noData || loading) ? 'position: relative; padding-top: 64%' : ''">
+      <q-inner-loading
+        v-if="loading"
+        :showing="true"
+        :style="!flex ? 'position: absolute; top: 0' : ''"
       >
-        <q-inner-loading
-          v-if="loading"
-          :showing="true"
-        >
-          <q-spinner-gears size="50px" color="primary" />
-        </q-inner-loading>
+        <q-spinner-gears size="50px" color="primary" />
+      </q-inner-loading>
 
+      <div
+        v-else-if="error"
+        class="error full-width full-height"
+        :style="!flex ?  'position: absolute; top: 0' : ''"
+      >
         <div
-          v-else-if="error"
-          class="error full-width full-height"
-        >
-          <div
-            class="row full-width full-height justify-center items-center no-data-inside"
-          >
-            <q-icon
-              name="error"
-              size="xl"
-              color="negative"
-            />
-            <span
-              class="text-weight-thin text-h6"
-            >
-              {{ error }}
-            </span>
-          </div>
-        </div>
-
-        <div
-          v-else-if="noData"
-          class="column no-data justify-center items-center full-width full-height"
+          class="row full-width full-height justify-center items-center no-data-inside"
         >
           <q-icon
-            name="cloud_off"
-            color="primary"
-            size="60px"
+            name="error"
+            size="xl"
+            color="negative"
           />
           <span
-            class="text-weight-light text-subtitle1 row items-center"
+            class="text-weight-thin text-h6"
           >
-            Sem dados no intervalo
+            {{ error }}
           </span>
         </div>
+      </div>
 
-        <apexchart
-          v-else-if="loaded"
-          ref="apexchart"
-          :options="apexOptions"
-          :series="apexSeries"
-          @mounted="apexChartMounted"
-          @click="click"
-        />
-      </div>
       <div
-        v-show="!loading"
-        style="position: absolute; top: -15px"
-        class="q-px-sm full-width"
+        v-else-if="noData"
+        class="column no-data justify-center items-center full-width full-height"
+        :style="!flex ? 'position: absolute; top: 0' : ''"
       >
-        <slot
-          name="header"
+        <q-icon
+          name="cloud_off"
+          color="primary"
+          size="60px"
         />
+        <span
+          class="text-weight-light text-subtitle1 row items-center"
+        >
+          Sem dados no intervalo
+        </span>
       </div>
+
+      <apexchart
+        v-else-if="loaded"
+        ref="apexchart"
+        :options="apexOptions"
+        :series="apexSeries"
+        @mounted="apexChartMounted"
+        @click="click"
+        :height="flex ? '100%' : 'auto'"
+      />
+    </div>
+    <div
+      v-show="!loading"
+      class="q-px-sm full-width"
+    >
+      <slot
+        name="header"
+      />
     </div>
   </q-card>
 </template>
@@ -130,6 +127,7 @@ class Props {
   readonly stateCount = prop<number>({ default: 0 })
   readonly filterDisabled = prop<boolean>({ default: false })
   readonly height = prop<number>({ default: -1 })
+  readonly flex = prop<boolean>({ default: false })
 }
 
 export default class BaseChart extends Vue.with(Props) {

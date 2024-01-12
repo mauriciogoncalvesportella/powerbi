@@ -52,8 +52,6 @@ export class OrderInfoController {
       throw new BadRequestException('initDay and endDay, or yearMonth must be specified')
     }
 
-    console.log(dateOrYearMonthParam)
-
     const params = new GetOrder.FromSellerStrategy(sellerCode, dateOrYearMonthParam)
     return this.service.getOrderList(params)
   }

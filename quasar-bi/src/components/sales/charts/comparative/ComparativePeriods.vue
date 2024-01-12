@@ -4,7 +4,7 @@
     :title="title"
     :apex-options="chart.options"
     :apex-series="chart.series"
-    :loading="(loading || externLoading) && !externNoData"
+    :loading="loading || externLoading"
     :no-data="noData || externNoData"
     :error="error"
     :state-count="stateCount"
@@ -154,7 +154,7 @@ export default defineComponent({
 
   setup (props, { emit }) {
     const chartComponent = ref(null) as Ref<any>
-    const loading = ref(false)
+    const loading = ref(true)
     const noData = ref(false)
     const chart = ref(cloneDeep(chartScaffold)) as Ref<any>
     chart.value.options.chart.id = `comparative-${props.dataMode}`
@@ -164,6 +164,10 @@ export default defineComponent({
     const chartData: Ref<ComparativeLinesDTO | undefined> = ref(undefined)
 
     const title = computed(() => {
+      if (props.externLoading) {
+        return 'Carregando...'
+      }
+
       const titles = {
         profit: 'Lucro',
         markup: 'Markup',

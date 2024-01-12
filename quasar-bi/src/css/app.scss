@@ -1,1 +1,29 @@
 // app global css in SCSS form
+
+.custom-scroll {
+  overflow: hidden;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+
+  &:hover {
+    overflow-y: scroll;
+  }
+
+  &::-webkit-scrollbar {
+    width: 6px; /* Largura da barra de rolagem */
+
+    &-track {
+      background-color: transparent;
+    }
+
+    /* Estilo do polegar (parte arrastável da barra de rolagem) */
+    &-thumb {
+      background-color: #888; /* Cor do polegar */
+      border-radius: 3px; /* Cantos arredondados do polegar */
+
+      &:hover {
+        background: #555;
+      }
+    }
+  }
+}

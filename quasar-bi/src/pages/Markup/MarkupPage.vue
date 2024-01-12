@@ -5,44 +5,45 @@
     <responsive-header>
       <sales-header />
     </responsive-header>
-    <markup-loading
+    <!--markup-loading
       v-if="teamHeaderStatus === 'loading'"
     />
     <transition
       appear
       enter-active-class="animated fadeIn"
+    -->
+    <div
+      class="row justify-center q-mt-md q-col-gutter-sm"
     >
       <div
-        v-show="teamHeaderStatus !== 'loading'"
-        class="row justify-center q-mt-md q-col-gutter-sm"
+        class="col-12 col-md-5 col-lg-5"
       >
-        <div
-          class="col-12 col-md-5 col-lg-5"
-        >
-          <chart-manager
-            ref="MarkupDailyBarsRef"
-            startComponent="MarkupDailyBars"
-            :loading="teamHeaderStatus === 'loading'"
-            :startProps="{
-              'extern-no-data': true
-            }"
-          />
-        </div>
-        <div
-          v-if="teamHeader?.type === 'team'"
-          class="col-12 col-md-5 col-lg-5"
-        >
-          <chart-manager
-            ref="MarkupResumeBarsRef"
-            startComponent="MarkupResumeBars"
-            :loading="teamHeaderStatus === 'loading'"
-            :startProps="{
-              'extern-no-data': true
-            }"
-          />
-        </div>
+        <chart-manager
+          ref="MarkupDailyBarsRef"
+          startComponent="MarkupDailyBars"
+          :loading="teamHeaderStatus === 'loading'"
+          :startProps="{
+            'extern-no-data': false,
+            loading: true
+          }"
+        />
       </div>
-    </transition>
+      <div
+        v-if="teamHeader?.type === 'team' || teamHeaderStatus === 'loading'"
+        class="col-12 col-md-5 col-lg-5"
+      >
+        <chart-manager
+          ref="MarkupResumeBarsRef"
+          startComponent="MarkupResumeBars"
+          :loading="teamHeaderStatus === 'loading'"
+          :startProps="{
+            'extern-no-data': false,
+            loading: true
+          }"
+        />
+      </div>
+    </div>
+    <!--/transition-->
   </q-page>
 </template>
 
