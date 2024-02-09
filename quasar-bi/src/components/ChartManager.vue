@@ -3,7 +3,7 @@
     ref="chart"
     :is="currentChartState.component"
     :key="key"
-    v-bind="currentChartState.props"
+    v-bind="{ ...currentChartState.props, flex }"
     @custom-event="$emit('custom-event', $event)"
     @next-state-year-month="nextStateYearMonth($event)"
     @nextState="nextState($event)"
@@ -48,6 +48,7 @@ class Props {
   startComponent!: string;
   loading!: boolean;
   disableChart!: boolean;
+  flex: boolean = false;
   startProps!: any
 }
 
@@ -78,6 +79,7 @@ export default class ChartManager extends Vue.with(Props) {
   states: ChartState[] = []
   index = 0
   key = 0
+  flex = false
 
   get currentChartState (): ChartState {
     return this.states[this.index]
@@ -89,6 +91,7 @@ export default class ChartManager extends Vue.with(Props) {
   }
 
   created () {
+    this.flex = this.startProps.flex
     this.states = []
     this.startProps.stateCount = 0
     this.states.push({
@@ -105,6 +108,7 @@ export default class ChartManager extends Vue.with(Props) {
       const state = cloneDeep(this.states[this.index])
       state.props.idMesAno = yearMonth
       state.props.yearMonth = yearMonth
+      state.props.flex = this.flex
       this.states[this.index] = state
       this.updateChartComponent(prev)
     }
@@ -131,6 +135,7 @@ export default class ChartManager extends Vue.with(Props) {
     } else {
       ++this.index
       state.props.stateCount = this.index
+      state.props.flex = this.flex
       this.states.push(state)
     }
 

@@ -3,11 +3,11 @@ set -e
 
 build_quasarbi(){
   echo "[quasar-bi] building image"
-  buildah bud -t quasar-bi . > /dev/null
-  buildah tag quasar-bi registry.digitalocean.com/datacompany/quasar-bi > /dev/null
+  podman build -t quasar-bi . > /dev/null
+  podman tag quasar-bi registry.digitalocean.com/datacompany/quasar-bi > /dev/null
 
   echo "[quasar-bi] uploading image"
-  buildah push registry.digitalocean.com/datacompany/quasar-bi > /dev/null
+  podman push registry.digitalocean.com/datacompany/quasar-bi > /dev/null
 
   echo "[quasar-bi] ok!"
 }

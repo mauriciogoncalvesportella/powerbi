@@ -1,46 +1,56 @@
 <template>
   <q-page
-    class="q-pb-lg"
+    style="overflow-y: hidden;"
   >
     <responsive-header>
-      <sales-header />
-    </responsive-header>
-    <profit-loading
-      v-if="teamHeaderStatus === 'loading'"
-    />
-    <transition
-      appear
-      enter-active-class="animated fadeIn"
-    >
       <div
-        v-show="teamHeaderStatus !== 'loading'"
-        class="row justify-center q-mt-md q-col-gutter-sm"
+        class="col col-md-3 col-lg-2 q-mr-xs"
       >
-        <div
-          class="col-12 col-md-5 col-lg-5"
-        >
-          <chart-manager
-            ref="ProfitDailyBarsRef"
-            startComponent="ProfitDailyBars"
-            :startProps="{
-              'extern-no-data': true
-            }"
-          />
-        </div>
-        <div
-          class="col-12 col-md-5 col-lg-5"
-          v-if="teamHeader?.type === 'team'"
-        >
-          <chart-manager
-            ref="ProfitResumeBarsRef"
-            startComponent="ProfitResumeBars"
-            :startProps="{
-              'extern-no-data': true
-            }"
-          />
-        </div>
+        <year-month-dropdown
+          ref="yearMonthDropdownRef"
+          id="yearMonthDropdownComponent"
+        />
       </div>
-    </transition>
+      <div
+        class="col col-md-3 col-lg-2 q-ml-xs"
+      >
+        <team-dropdown
+          ref="teamDropdownRef"
+        />
+      </div>
+    </responsive-header>
+
+    <div
+      style="display: flex; gap: 10px; max-width: 1400px;"
+      :style="`flex-direction: ${$q.screen.lt.md ? 'column' : 'row'}; height: ${$q.screen.lt.md ? '1000px' : '500px'}`"
+      class="q-mt-sm q-mx-auto"
+    >
+      <chart-manager
+        ref="ProfitDailyBarsRef"
+        startComponent="ProfitDailyBars"
+        :loading="teamHeaderStatus === 'loading'"
+        :startProps="{
+          'extern-loading': true,
+          'extern-no-data': false,
+          flex: true
+        }"
+        flex
+        style="height: 100%; flex: 1"
+      />
+      <chart-manager
+        v-if="verifyRole('sales.revenue.all')"
+        ref="ProfitResumeBarsRef"
+        startComponent="ProfitResumeBars"
+        :loading="teamHeaderStatus === 'loading'"
+        :startProps="{
+          'extern-loading': true,
+          'extern-no-data': false,
+          flex: true
+        }"
+        flex
+        style="height: 100%; flex: 1"
+      />
+    </div>
   </q-page>
 </template>
 
@@ -49,22 +59,27 @@ import ProfitLoading from 'src/pages/Profit/ProfitLoading.vue'
 import ChartManager from 'components/ChartManager.vue'
 import ResponsiveHeader from 'src/components/core/ResponsiveHeader.vue'
 import SalesHeader from 'src/components/sales/SalesHeader.vue'
+import YearMonthDropdown from 'src/components/YearMonthDropdown.vue'
+import TeamDropdown from 'src/components/sales/TeamDropdown.vue'
 import { useTeamDropdown } from 'src/reactive/UseTeamDropdown'
 import { useAuth } from 'src/reactive/UseAuth'
 import { useYearMonthDropdown } from 'src/reactive/YearMonthDropdown'
-import { defineComponent, computed, ref, Ref, nextTick, watch } from 'vue'
+import { defineComponent, computed, ref, Ref, nextTick, onMounted } from 'vue'
+import UserRoles from 'src/utils/userRoles.utils'
 
 export default defineComponent({
   components: {
     ProfitLoading,
     ChartManager,
     ResponsiveHeader,
-    SalesHeader
+    SalesHeader,
+    YearMonthDropdown,
+    TeamDropdown
   },
 
   setup () {
-    const { yearMonth } = useYearMonthDropdown()
-    const { team: teamHeader, updateSelected, status: teamHeaderStatus } = useTeamDropdown(false)
+    const { init: initYearMonth, yearMonth, YearMonthDropdownEmitter } = useYearMonthDropdown()
+    const { init: initTeamDropdownw, team: teamHeader, status: teamHeaderStatus, params, TeamDropdownEmitter } = useTeamDropdown()
     const { user } = useAuth()
 
     /* Charts */
@@ -72,6 +87,7 @@ export default defineComponent({
     const ProfitDailyBarsRef: Ref<any> = ref(null)
 
     const update = (status: string) => {
+      console.log('UPDATE!!')
       nextTick(() => {
         if (status === 'loaded') {
           ProfitDailyBarsRef.value?.newState({
@@ -83,13 +99,17 @@ export default defineComponent({
               cumulative: false
             }
           })
-          ProfitResumeBarsRef.value?.newState({
-            component: 'ProfitResumeBars',
-            props: {
-              teamCode: teamHeader.value?.code,
-              yearMonth: yearMonth.value
-            }
-          })
+          if (teamHeader.value?.type === 'team') {
+            ProfitResumeBarsRef.value?.newState({
+              component: 'ProfitResumeBars',
+              props: {
+                teamCode: teamHeader.value?.code,
+                yearMonth: yearMonth.value
+              }
+            })
+          } else {
+            ProfitResumeBarsRef.value?.newState({ component: 'ProfitResumeBars', props: { 'extern-no-data': true } })
+          }
         } else {
           ProfitDailyBarsRef.value?.newState({ component: 'ProfitDailyBars', props: { 'extern-no-data': true } })
           ProfitResumeBarsRef.value?.newState({ component: 'ProfitResumeBars', props: { 'extern-no-data': true } })
@@ -97,14 +117,21 @@ export default defineComponent({
       })
     }
 
-    updateSelected.value = (status) => update(status)
-    watch(yearMonth, () => {
-      if (user.value?.fgFuncao === 1) {
-        update('loaded')
+    onMounted(async () => {
+      initYearMonth()
+      if (!yearMonth.value || !user.value) {
+        return
       }
+      params.value = { interval: [yearMonth.value, yearMonth.value], teamCode: user.value?.cdEquipe }
+      await initTeamDropdownw(UserRoles.verifyRole('sales.profit.all'))
+      update('loaded')
+
+      YearMonthDropdownEmitter.on('updateYearMonthDropdown', () => update('loaded'))
+      TeamDropdownEmitter.on('updateTeamDropdown', () => update('loaded'))
     })
 
     return {
+      verifyRole: UserRoles.verifyRole,
       ProfitDailyBarsRef,
       ProfitResumeBarsRef,
       teamHeader,

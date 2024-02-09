@@ -22,9 +22,7 @@ import { defineComponent } from 'vue'
 export default defineComponent({
   components: { YearMonthDropdown },
   setup: () => ({
-    onItemClick: () => {
-      console.log('on item click')
-    }
+    onItemClick: () => 0
   })
 })
 </script>

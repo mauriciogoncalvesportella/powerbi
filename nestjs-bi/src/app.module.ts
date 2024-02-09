@@ -11,6 +11,8 @@ import {APP_GUARD, APP_INTERCEPTOR, MiddlewareBuilder} from '@nestjs/core';
 import {LogginInterceptor} from './shared/logging.interceptor';
 import {BIModule} from './bi/bi.module';
 import {VersionControlMiddleware} from './shared/version-control.middleware';
+import { UserRolesGlobalGuard } from './auth/user-roles/user-roles-global.guard';
+import { UserRolesService } from './auth/user-roles/user-roles.service';
 
 @Module({
   imports: [
@@ -26,11 +28,12 @@ import {VersionControlMiddleware} from './shared/version-control.middleware';
   ],
   controllers: [AppController],
   providers: [
+    UserRolesService,
     AppService,
     {
       provide: APP_INTERCEPTOR,
       useClass: LogginInterceptor
-    },
+    }
   ],
 })
 export class AppModule implements NestModule {

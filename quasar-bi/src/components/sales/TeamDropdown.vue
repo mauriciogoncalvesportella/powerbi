@@ -3,15 +3,14 @@
     ref="dropdownComponent"
     color="primary"
     class="full-width"
-    :disable="user.fgFuncao === 1"
-    push
+    :disable="!enabled"
     :loading="loading"
   >
     <template v-slot:label>
       <div
         class="row full-width"
       >
-        {{ user.fgFuncao === 1 ? user.nmVendedor : label }}
+        {{ team?.label }}
       </div>
     </template>
 
@@ -30,7 +29,7 @@
 
     <q-tree
       v-model:expanded="expanded"
-      v-model:selected="selected"
+      v-model:selected="selectedKey"
       ref="treeComponent"
       :filter="filter"
       :nodes="nodes"
@@ -44,51 +43,28 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ref, watch, onMounted } from 'vue'
+import { defineComponent, computed, ref } from 'vue'
 import { useTeamDropdown } from 'src/reactive/UseTeamDropdown'
 import { useAuth } from 'src/reactive/UseAuth'
-import { useYearMonthDropdown } from 'src/reactive/YearMonthDropdown'
 
 export default defineComponent({
   setup () {
-    const { yearMonth } = useYearMonthDropdown()
+    // const { yearMonth } = useYearMonthDropdown()
     const { user } = useAuth()
     const filter = ref('')
     const selected = ref('')
-    let teamDropdownLoaded = false
 
     const {
       rootNode,
       loading,
       refresh,
-      init,
-      label,
-      params,
-      isCustomParams,
       selectedKey,
-      updateSelectedKey
+      enabled,
+      updateSelectedKey,
+      team
     } = useTeamDropdown()
 
-    init()
     const expanded = ref([selectedKey.value])
-
-    const refreshTeamDropdown = (force: boolean = false) => {
-      if (!isCustomParams.value) {
-        if ((!teamDropdownLoaded || force) && user.value && user.value.fgFuncao > 1 && yearMonth.value) {
-          params.value = { teamCode: user.value.cdEquipe, interval: [yearMonth.value, yearMonth.value] }
-          teamDropdownLoaded = true
-          refresh()
-        }
-      }
-    }
-
-    watch(yearMonth, () => {
-      refreshTeamDropdown(true)
-    })
-
-    onMounted(() => {
-      refreshTeamDropdown()
-    })
 
     return {
       updateSelectedKey,
@@ -96,10 +72,11 @@ export default defineComponent({
       filter,
       expanded,
       selectedKey,
-      label,
+      team,
       user,
       loading,
       refresh,
+      enabled,
       nodes: computed(() => rootNode.value ? [rootNode.value] : [])
     }
   }

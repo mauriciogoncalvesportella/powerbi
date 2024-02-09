@@ -1,6 +1,5 @@
 <template>
   <q-btn-dropdown
-    push
     color="primary"
     class="full-width"
   >

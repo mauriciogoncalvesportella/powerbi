@@ -1,5 +1,5 @@
-import { IsArray, IsBoolean, IsEmail, IsInt, IsNumber, IsOptional, IsString } from "class-validator";
-import { BeforeInsert, Column, Entity, Index, PrimaryColumn, Unique } from "typeorm";
+import { IsArray, IsBoolean, IsInt, IsNumber, IsOptional, IsString } from "class-validator";
+import { BeforeInsert, Column, Entity, In, Index, PrimaryColumn, Unique } from "typeorm";
 import * as bcrypt from 'bcryptjs'
 
 @Entity('cad_vendedor')
@@ -9,13 +9,15 @@ export class CadVendedorEntity {
   @IsInt()
   cd: number
 
-//  @ManyToOne(() => CadEquipeEntity, cadEquipeEntity => cadEquipeEntity.cd)
-//  @JoinColumn({ name: 'cdCadEquipe' })
-//  cadEquipeEntity: CadEquipeEntity
   @Column('int')
   @Index('IDX_CADVENDEDOR_CDEQUIPE')
   @IsInt()
   cdEquipe: number
+
+  @Column('int')
+  @Index('IDX_CADVENDEDOR_CDPERFILACESSO')
+  @IsInt()
+  cdPerfilAcesso: number
 
   @Column({ length: 50 })
   @IsString()

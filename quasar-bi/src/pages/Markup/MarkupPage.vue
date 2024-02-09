@@ -1,49 +1,56 @@
 <template>
   <q-page
-    class="collumn full-width q-pb-lg"
+    style="overflow-y: hidden;"
   >
     <responsive-header>
-      <sales-header />
+      <div
+        class="col col-md-3 col-lg-2 q-mr-xs"
+      >
+        <year-month-dropdown
+          ref="yearMonthDropdownRef"
+          id="yearMonthDropdownComponent"
+        />
+      </div>
+      <div
+        class="col col-md-3 col-lg-2 q-ml-xs"
+      >
+        <team-dropdown
+          ref="teamDropdownRef"
+        />
+      </div>
     </responsive-header>
-    <!--markup-loading
-      v-if="teamHeaderStatus === 'loading'"
-    />
-    <transition
-      appear
-      enter-active-class="animated fadeIn"
-    -->
+
     <div
-      class="row justify-center q-mt-md q-col-gutter-sm"
+      style="display: flex; gap: 10px; max-width: 1400px;"
+      :style="`flex-direction: ${$q.screen.lt.md ? 'column' : 'row'}; height: ${$q.screen.lt.md ? '1000px' : '500px'}`"
+      class="q-mt-sm q-mx-auto"
     >
-      <div
-        class="col-12 col-md-5 col-lg-5"
-      >
-        <chart-manager
-          ref="MarkupDailyBarsRef"
-          startComponent="MarkupDailyBars"
-          :loading="teamHeaderStatus === 'loading'"
-          :startProps="{
-            'extern-no-data': false,
-            loading: true
-          }"
-        />
-      </div>
-      <div
-        v-if="teamHeader?.type === 'team' || teamHeaderStatus === 'loading'"
-        class="col-12 col-md-5 col-lg-5"
-      >
-        <chart-manager
-          ref="MarkupResumeBarsRef"
-          startComponent="MarkupResumeBars"
-          :loading="teamHeaderStatus === 'loading'"
-          :startProps="{
-            'extern-no-data': false,
-            loading: true
-          }"
-        />
-      </div>
+      <chart-manager
+        ref="MarkupDailyBarsRef"
+        startComponent="MarkupDailyBars"
+        :loading="teamHeaderStatus === 'loading'"
+        :startProps="{
+          'extern-loading': true,
+          'extern-no-data': false,
+          flex: true
+        }"
+        flex
+        style="height: 100%; flex: 1"
+      />
+      <chart-manager
+        v-if="verifyRole('sales.revenue.all')"
+        ref="MarkupResumeBarsRef"
+        startComponent="MarkupResumeBars"
+        :loading="teamHeaderStatus === 'loading'"
+        :startProps="{
+          'extern-loading': true,
+          'extern-no-data': false,
+          flex: true
+        }"
+        flex
+        style="height: 100%; flex: 1"
+      />
     </div>
-    <!--/transition-->
   </q-page>
 </template>
 
@@ -52,24 +59,28 @@ import ChartManager from 'components/ChartManager.vue'
 import ResponsiveHeader from 'src/components/core/ResponsiveHeader.vue'
 import SalesHeader from 'src/components/sales/SalesHeader.vue'
 import MarkupLoading from 'src/pages/Markup/MarkupLoading.vue'
+import YearMonthDropdown from 'src/components/YearMonthDropdown.vue'
+import TeamDropdown from 'src/components/sales/TeamDropdown.vue'
 import { useAuth } from 'src/reactive/UseAuth'
 import { useTeamDropdown } from 'src/reactive/UseTeamDropdown'
-// import { useAuth } from 'src/reactive/UseAuth'
 import { useYearMonthDropdown } from 'src/reactive/YearMonthDropdown'
-import { watch, defineComponent, ref, Ref, nextTick, onMounted } from 'vue'
+import UserRoles from 'src/utils/userRoles.utils'
+import { defineComponent, ref, Ref, nextTick, onMounted } from 'vue'
 
 export default defineComponent({
   components: {
     MarkupLoading,
     ChartManager,
     ResponsiveHeader,
-    SalesHeader
+    SalesHeader,
+    YearMonthDropdown,
+    TeamDropdown
   },
 
   setup () {
     const { user } = useAuth()
-    const { yearMonth } = useYearMonthDropdown()
-    const { team: teamHeader, status: teamHeaderStatus, updateSelected } = useTeamDropdown(false)
+    const { yearMonth, init: initYearMonth, YearMonthDropdownEmitter } = useYearMonthDropdown()
+    const { team: teamHeader, status: teamHeaderStatus, params, init: initTeamDropdownw, TeamDropdownEmitter } = useTeamDropdown()
     // const { user } = useAuth()
 
     /* Charts */
@@ -88,13 +99,17 @@ export default defineComponent({
               cumulative: false
             }
           })
-          MarkupResumeBarsRef.value?.newState({
-            component: 'MarkupResumeBars',
-            props: {
-              teamCode: teamHeader.value?.code,
-              yearMonth: yearMonth.value
-            }
-          })
+          if (teamHeader.value?.type === 'team') {
+            MarkupResumeBarsRef.value?.newState({
+              component: 'MarkupResumeBars',
+              props: {
+                teamCode: teamHeader.value?.code,
+                yearMonth: yearMonth.value
+              }
+            })
+          } else {
+            MarkupResumeBarsRef.value?.newState({ component: 'MarkupResumeBars', props: { 'extern-no-data': true } })
+          }
         } else {
           MarkupDailyBarsRef.value?.newState({ component: 'MarkupDailyBars', props: { 'extern-no-data': true } })
           MarkupResumeBarsRef.value?.newState({ component: 'MarkupResumeBars', props: { 'extern-no-data': true } })
@@ -102,17 +117,21 @@ export default defineComponent({
       })
     }
 
-    const updateIfSeller = () => {
-      if (user.value?.fgFuncao === 1) {
-        update('loaded')
+    onMounted(async () => {
+      initYearMonth()
+      if (!yearMonth.value || !user.value) {
+        return
       }
-    }
+      params.value = { interval: [yearMonth.value, yearMonth.value], teamCode: user.value?.cdEquipe }
+      await initTeamDropdownw(UserRoles.verifyRole('sales.markup.all'))
+      update('loaded')
 
-    updateSelected.value = (status) => update(status)
-    watch(yearMonth, () => updateIfSeller())
-    onMounted(() => updateIfSeller())
+      YearMonthDropdownEmitter.on('updateYearMonthDropdown', () => update('loaded'))
+      TeamDropdownEmitter.on('updateTeamDropdown', () => update('loaded'))
+    })
 
     return {
+      verifyRole: UserRoles.verifyRole,
       MarkupDailyBarsRef,
       MarkupResumeBarsRef,
       teamHeader,
@@ -121,36 +140,5 @@ export default defineComponent({
     }
   }
 })
-/*
-@Options({
-  components: {
-    ChartManager,
-    ResponsiveHeader,
-    SalesHeader
-  }
-})
-export default class MarkupPage extends Vue {
-  yearMonth?: string
-  loading = true
-
-  mounted () {
-    this.yearMonth = this.$store.getters['auth/currentYearMonth']
-    this.refresh()
-  }
-
-  async refresh () {
-    try {
-      this.loading = true
-      await Promise.all([
-        this.$store.dispatch('sales/getEquipeTree'),
-        this.$store.dispatch('sales/getTeams'),
-        this.$store.dispatch('sales/getSellers')
-      ])
-    } finally {
-      this.loading = false
-    }
-  }
-}
-*/
 
 </script>

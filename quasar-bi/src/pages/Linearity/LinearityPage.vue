@@ -11,22 +11,11 @@
     </sales-header>
   </responsive-header>
 
-  <!--
-  <linearity-loading
-    v-if="teamHeaderStatus === 'loading'"
-  />
-  -->
-
-  <!-- <q-inner-loading
-    v-if="teamHeaderStatus === 'loading'"
-  >
-    <q-spinner-gears size="50px" color="primary" />
-  </q-inner-loading> -->
-
   <div
     class="row justify-start"
     :class="{
-      'q-pa-xs': $q.screen.gt.sm
+      'q-pa-xs': $q.screen.gt.sm,
+      'q-mt-xs': $q.screen.lt.md
     }"
     :style="`height: ${chartContainerHeight};`"
   >
@@ -55,7 +44,7 @@
           loading: true,
           flex: true
         }"
-        style="height: 100%;flex-grow: 1;"
+        style="height: 100%; flex-grow: 1;"
       />
     </div>
     <linearity-data
@@ -82,33 +71,6 @@
       <q-tab name="list" icon="list" label="Lista" />
     </q-tabs>
   </q-footer>
-  <!--div class="row justify-start q-pt-sm">
-    <div
-      id="linearity-chart-container"
-      v-show="teamHeaderStatus !== 'loading'"
-      class="col-5 col-lg-3 col-xl-4 column justify-start q-pl-sm q-pr-sm custom-scroll"
-    >
-      <chart-manager
-        ref="LinearityQuantityChartRef"
-        startComponent="LinearityQuantityChart"
-        :loading="teamHeaderStatus === 'loading'"
-        :startProps="{
-          'extern-no-data': true
-        }"
-      />
-      <chart-manager
-        class="q-pt-sm"
-        ref="LinearityPotentialChartRef"
-        startComponent="LinearityPotentialChart"
-        :loading="teamHeaderStatus === 'loading'"
-        :startProps="{
-          'extern-no-data': true
-        }"
-        style="max-height: 100px;"
-      />
-    </div>
-    <linearity-data class="col" />
-  </div-->
   <global-dialogs />
 </template>
 
@@ -129,6 +91,7 @@ import LinearitySortDropdown from 'src/components/sales/linearity/LinearitySortD
 import GlobalDialogs from 'src/components/GlobalDialogs.vue'
 import { useQuasar } from 'quasar'
 import { useLinearity } from 'src/reactive/UseLinearity'
+import UserRoles from 'src/utils/userRoles.utils'
 
 export default defineComponent({
   components: {
@@ -147,13 +110,8 @@ export default defineComponent({
     const $q = useQuasar()
     const { mobileCurrentTab } = useLinearity()
     const { yearMonth } = useYearMonthDropdown()
-    const { team: teamHeader, status: teamHeaderStatus, updateSelected, params, refresh } = useTeamDropdown(true)
+    const { team: teamHeader, status: teamHeaderStatus, params, init, TeamDropdownEmitter } = useTeamDropdown()
     const { user } = useAuth()
-
-    const endYearMonth = format(addMonths(new Date(), -1), 'yyyy-MM')
-    const startYearMonth = format(addMonths(new Date(), -5), 'yyyy-MM')
-    params.value = { teamCode: user.value?.cdEquipe as number, interval: [startYearMonth, endYearMonth] }
-    refresh()
 
     /* Charts */
     const LinearityQuantityChartRef: Ref<any> = ref(null)
@@ -197,11 +155,13 @@ export default defineComponent({
       })
     }
 
-    updateSelected.value = (status) => update(status)
-    onMounted(() => {
-      if (user.value?.fgFuncao === 1) {
-        update('loaded')
-      }
+    onMounted(async () => {
+      const endYearMonth = format(addMonths(new Date(), -1), 'yyyy-MM')
+      const startYearMonth = format(addMonths(new Date(), -5), 'yyyy-MM')
+      params.value = { teamCode: user.value?.cdEquipe as number, interval: [startYearMonth, endYearMonth] }
+      await init(UserRoles.verifyRole('sales.linearity.all'))
+      update('loaded')
+      TeamDropdownEmitter.on('updateTeamDropdown', () => update('loaded'))
     })
 
     return {

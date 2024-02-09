@@ -20,6 +20,7 @@ export interface TeamHeader {
 }
 
 // const scrollPosition = ref(0 as number)
+// const { headerObserver } = UseHeaderLoading()
 const nodes = ref([] as NodeTree[])
 const teamHeader: Ref<TeamHeader | undefined> = ref(undefined)
 const loading = ref(false)
@@ -114,6 +115,8 @@ const init = async (cd: number): Promise<NodeTree[]> => {
       teamHeader.value = { cd: parentNode.cd, label: parentNode.label, type: parentNode.type }
     }
   }
+
+  // emitTeamSubject()
   return nodes.value
 }
 
@@ -132,6 +135,8 @@ const updateSelected = (): any | null => {
 watch(selected, (value, oldvalue) => {
   if (!value) {
     selected.value = oldvalue
+  } else {
+    // emitTeamSubject()
   }
 })
 

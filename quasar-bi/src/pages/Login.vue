@@ -46,13 +46,21 @@
                   v-model="password"
                   square
                   filled
-                  type="password"
+                  :type="isPwd ? 'password' : 'text'"
                   label="Senha"
                   :clearable="$q.screen.lt.sm"
                   :readonly="loading"
                   :error="loginError !== undefined"
                   @keydown="resetError()"
-                />
+                >
+                  <template v-slot:append>
+                    <q-icon
+                      :name="isPwd ? 'visibility_off' : 'visibility'"
+                      class="cursor-pointer"
+                      @click="isPwd = !isPwd"
+                    />
+                  </template>
+                </q-input>
               </q-card-section>
               <q-card-actions
                 class="q-px-md q-mb-md"
@@ -98,7 +106,7 @@ import { Notify } from 'quasar'
 export default defineComponent({
   // @ts-ignore
   setup () {
-    const { session_expired } = useRoute().query
+    const { session_expired, message, color } = useRoute().query
     if (session_expired === 'true') {
       Notify.create({
         message: 'Sua sessão expirou',
@@ -107,6 +115,15 @@ export default defineComponent({
       })
     }
 
+    if (message) {
+      Notify.create({
+        message: message as string,
+        color: (color as string) ?? 'red',
+        position: 'top'
+      })
+    }
+
+    const isPwd = ref(true)
     const router = useRouter()
     const email = ref('')
     const password = ref('')
@@ -122,6 +139,7 @@ export default defineComponent({
     }
 
     return {
+      isPwd,
       login,
       email,
       password,

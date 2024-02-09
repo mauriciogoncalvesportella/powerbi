@@ -2,7 +2,7 @@
   <q-page
     class="q-pb-lg q-pt-lg"
   >
-    <responsive-header />
+    <responsive-header  v-show="$q.screen.lt.md"/>
     <q-inner-loading
       v-if="loading"
       :showing="true"

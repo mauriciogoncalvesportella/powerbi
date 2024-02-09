@@ -2,6 +2,7 @@ import { CanActivate, ExecutionContext, ForbiddenException, Inject, Injectable, 
 import { RequestMetadata } from "src/shared/request-metadata.provider";
 import { UserAuth } from "../auth.interfaces";
 import { UserStatusService } from "./user-status.service";
+import { Reflector } from "@nestjs/core";
 
 @Injectable({ scope: Scope.REQUEST })
 export class UserDeactivatedGuard implements CanActivate {
@@ -9,11 +10,17 @@ export class UserDeactivatedGuard implements CanActivate {
     @Inject(UserStatusService)
     private userStatusService: UserStatusService,
     @Inject(RequestMetadata)
-    private metadata: RequestMetadata
+    private metadata: RequestMetadata,
+    private reflector: Reflector
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const user: UserAuth = context.switchToHttp().getRequest().user
+
+    const ignoreJwt = this.reflector.get<boolean>('ignore_jwt', context.getHandler());
+    if (ignoreJwt) {
+      return true; // Ignora a validação se a rota for marcada como pública
+    }
 
     if (!user) {
       throw new UnauthorizedException('User is null')

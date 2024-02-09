@@ -1,34 +1,45 @@
 <template>
-  <q-page
-    class="column full-width q-pb-lg"
-  >
+  <q-page style="overflow-y: hidden;">
     <responsive-header>
-      <sales-header>
-        <div
-          class="col-12 col-md-4 col-lg-3"
-        >
-          <comparative-dropdown />
-        </div>
-      </sales-header>
+      <div
+        class="col col-md-3 col-lg-2 q-mr-xs"
+      >
+        <year-month-dropdown
+          ref="yearMonthDropdownRef"
+          id="yearMonthDropdownComponent"
+        />
+      </div>
+      <div
+        class="col col-md-3 col-lg-2 q-ml-xs q-mr-xs"
+      >
+        <team-dropdown
+          ref="teamDropdownRef"
+        />
+      </div>
+      <div
+        class="col-12 col-md-4 col-lg-3 q-ml-xs"
+      >
+        <comparative-dropdown />
+      </div>
     </responsive-header>
 
     <div
-      class="row justify-center q-mt-md q-col-gutter-sm q-mx-md"
+      style="display: flex; gap: 10px; max-width: 900px;"
+      :style="`flex-direction: ${$q.screen.lt.md ? 'column' : 'row'}; height: 600px`"
+      class="q-mt-sm q-mx-auto"
     >
-      <div
-        class="col-12 col-md-8 col-lg-6"
-      >
-        <chart-manager
-          ref="ComparativePeriodsRef"
-          startComponent="ComparativePeriods"
-          :startProps="{
-            'extern-no-data': false,
-            'extern-loading': true,
-            chartType: 'revenue'
-          }"
-          @custom-event="customEvent"
-        />
-      </div>
+      <chart-manager
+        ref="ComparativePeriodsRef"
+        startComponent="ComparativePeriods"
+        :loading="teamHeaderStatus === 'loading'"
+        :startProps="{
+          'extern-loading': true,
+          'extern-no-data': false,
+          flex: true
+        }"
+        flex
+        style="height: 100%; flex: 1"
+      />
     </div>
   </q-page>
 </template>
@@ -39,12 +50,15 @@ import ResponsiveHeader from 'src/components/core/ResponsiveHeader.vue'
 import SalesHeader from 'src/components/sales/SalesHeader.vue'
 import MarkupLoading from 'src/pages/Markup/MarkupLoading.vue'
 import ComparativeDropdown from 'src/components/sales/comparative/ComparativeDropdown.vue'
+import YearMonthDropdown from 'src/components/YearMonthDropdown.vue'
+import TeamDropdown from 'src/components/sales/TeamDropdown.vue'
 import { useTeamDropdown } from 'src/reactive/UseTeamDropdown'
 import { useAuth } from 'src/reactive/UseAuth'
 import { useYearMonthDropdown } from 'src/reactive/YearMonthDropdown'
-import { defineComponent, nextTick, Ref, ref, onMounted, watch } from 'vue'
+import { defineComponent, nextTick, Ref, ref, onMounted } from 'vue'
 import { format, addMonths } from 'date-fns'
 import { useComparative } from 'src/reactive/UseComparative'
+import UserRoles from 'src/utils/userRoles.utils'
 
 export default defineComponent({
   components: {
@@ -52,17 +66,16 @@ export default defineComponent({
     ChartManager,
     ResponsiveHeader,
     SalesHeader,
-    ComparativeDropdown
+    ComparativeDropdown,
+    YearMonthDropdown,
+    TeamDropdown
   },
 
   setup () {
     const { user } = useAuth()
-    const { yearMonth } = useYearMonthDropdown()
-    const { team: teamHeader, status: teamHeaderStatus, updateSelected, params, refresh } = useTeamDropdown(true)
+    const { yearMonth, init: initYearMonth, YearMonthDropdownEmitter } = useYearMonthDropdown()
+    const { team: teamHeader, status: teamHeaderStatus, params, init: initTeamDropdownw, TeamDropdownEmitter } = useTeamDropdown()
     const { headerModels, getFavoriteProducts, favoriteProducts, removeFavoriteProductSelected, setFavoriteProduct, selectedFavoriteProduct } = useComparative()
-    const endYearMonth = format(addMonths(new Date(), 0), 'yyyy-MM')
-    const startYearMonth = format(addMonths(new Date(), -5), 'yyyy-MM')
-    params.value = { teamCode: user.value?.cdEquipe as number, interval: [startYearMonth, endYearMonth] }
 
     const ComparativePeriodsRef: Ref<any> = ref(null)
     const update = (status: string) => {
@@ -89,21 +102,20 @@ export default defineComponent({
       })
     }
 
-    const updateIfSeller = () => {
-      if (user.value?.fgFuncao === 1) {
-        update('loaded')
+    onMounted(async () => {
+      initYearMonth()
+      if (!yearMonth.value || !user.value) {
+        return
       }
-    }
+      const endYearMonth = format(addMonths(new Date(), 0), 'yyyy-MM')
+      const startYearMonth = format(addMonths(new Date(), -5), 'yyyy-MM')
+      params.value = { teamCode: user.value.cdEquipe, interval: [startYearMonth, endYearMonth] }
+      await getFavoriteProducts()
+      await initTeamDropdownw(UserRoles.verifyRole('sales.comparative.all'))
+      update('loaded')
 
-    onMounted(() => {
-      Promise.all([getFavoriteProducts(), refresh()])
-        .then(() => {
-          updateIfSeller()
-          watch(headerModels, () => update('loaded'), { deep: true })
-          watch(yearMonth, () => update('loaded'))
-          updateSelected.value = (status) => update(status)
-          update('loaded')
-        })
+      YearMonthDropdownEmitter.on('updateYearMonthDropdown', () => update('loaded'))
+      TeamDropdownEmitter.on('updateTeamDropdown', () => update('loaded'))
     })
 
     const customEvent = (event: { id: string, payload: any }) => {

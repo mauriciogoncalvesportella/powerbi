@@ -6,6 +6,8 @@ import {IdMesAnoValidationPipe} from "src/shared/id-mes-ano.pipe";
 import {DateOrYearMonthParam} from "../sales.types";
 import {ProfitGenerator} from "./profit.generator";
 import {IProfitGenerator} from "./profit.interfaces";
+import { CheckUserRoles } from "src/auth/user-roles/check-user-roles.decorator";
+import UserRoles from "src/auth/user-roles/user-roles.enum";
 
 @UseGuards(JwtGuard, UserDeactivatedGuard)
 @Role('user')
@@ -48,6 +50,7 @@ export class ProfitController {
     return this.generator.daily(cd, type, yearMonth, cumulative, new ProfitGenerator.MarkupStrategy)
   }
 
+  @CheckUserRoles(UserRoles.sales_revenue)
   @Get('revenue-daily-chart')
   async getRevenueDailyBars (
     @Query('cd', ParseIntPipe)

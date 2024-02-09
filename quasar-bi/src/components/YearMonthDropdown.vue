@@ -2,7 +2,6 @@
   <q-btn-dropdown
     color="primary"
     class="full-width"
-    push
   >
     <template v-slot:label>
       <div
@@ -47,7 +46,6 @@
 <script lang="ts">
 import { defineComponent, onMounted } from 'vue'
 import { format } from 'date-fns'
-import { useStore } from 'src/store'
 import { useYearMonthDropdown } from 'src/reactive/YearMonthDropdown'
 
 export default defineComponent({
@@ -56,10 +54,9 @@ export default defineComponent({
   },
   emits: ['update:modelValue'],
   setup (_, { emit }) {
-    const $store = useStore()
-
-    const { init, dates, updateSelected, date } = useYearMonthDropdown()
-    init($store.getters['auth/currentYearMonth'])
+    const { dates, updateSelected, date } = useYearMonthDropdown()
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // init(currentYearMonth.value!)
 
     function onItemClick (index: number) {
       updateSelected(index)

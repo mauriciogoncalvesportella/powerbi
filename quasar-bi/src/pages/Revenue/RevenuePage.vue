@@ -1,137 +1,141 @@
+<!-- eslint-disable @typescript-eslint/no-non-null-assertion -->
 <template>
   <q-page
-    class="collumn full-width q-pb-lg"
+    style="overflow-y: hidden;"
   >
     <responsive-header>
-      <sales-header />
-    </responsive-header>
-    <revenue-loading
-      v-if="teamHeaderStatus === 'loading'"
-    />
-    <transition
-      appear
-      enter-active-class="animated fadeIn"
-    >
       <div
-        v-show="teamHeaderStatus !== 'loading'"
-        class="q-mt-sm"
+        class="col col-md-3 col-lg-2 q-mr-xs"
+      >
+        <year-month-dropdown
+          ref="yearMonthDropdownRef"
+          id="yearMonthDropdownComponent"
+        />
+      </div>
+      <div
+        class="col col-md-3 col-lg-2 q-ml-xs"
+      >
+        <team-dropdown
+          ref="teamDropdownRef"
+        />
+      </div>
+    </responsive-header>
+    <!--revenue-loading
+      v-if="teamHeaderStatus === 'loading'"
+    /-->
+    <div
+      class="justify-center q-mt-sm"
+    >
+      <q-scroll-area
+        style="height: 261px"
       >
         <div
-          class="row justify-center"
+          class="row justify-center q-gutter-x-sm no-wrap"
         >
-          <div
-            class="col-12 col-lg-10 q-px-xs"
-          >
-            <q-scroll-area
-              style="height: 264px"
-            >
-              <div
-                class="row justify-center q-gutter-x-sm no-wrap"
-              >
-                <gadget-manager
-                  ref="RevenueTodayGadgetRef"
-                  startComponent="RevenueTodayGadget"
-                  :disable-gadget="yearMonth !== $store.getters['auth/currentYearMonth']"
-                  :loading="teamHeaderStatus === 'loading'"
-                  :no-data="teamHeaderStatus === 'no-data'"
-                  :startProps="{
-                    'extern-loading': true,
-                    'exern-no-data': true
-                  }"
-                />
-                <gadget-manager
-                  ref="RevenueGadgetRef"
-                  startComponent="RevenueGadget"
-                  :loading="teamHeaderStatus === 'loading'"
-                  :no-data="teamHeaderStatus === 'no-data'"
-                  :startProps="{
-                    'extern-loading': true,
-                    'extern-no-data': true
-                  }"
-                />
-                <gadget-manager
-                  ref="RevenueMaxMinGadgetRef"
-                  startComponent="RevenueMaxMinGadget"
-                  :loading="teamHeaderStatus === 'loading'"
-                  :no-data="teamHeaderStatus === 'no-data'"
-                  :startProps="{
-                    'extern-loading': true,
-                    'extern-no-data': true
-                  }"
-                />
-                <gadget-manager
-                  ref="RevenueRankingGadgetRef"
-                  startComponent="RevenueRankingGadget"
-                  :disable-gadget="teamHeader?.type === 'seller'"
-                  :loading="teamHeaderStatus === 'loading'"
-                  :no-data="teamHeaderStatus === 'no-data'"
-                  :start-props="{
-                    'extern-loading': true,
-                    'extern-no-data': true
-                  }"
-                />
-              </div>
-            </q-scroll-area>
-          </div>
+          <gadget-manager
+            ref="RevenueTodayGadgetRef"
+            startComponent="RevenueTodayGadget"
+            :disable-gadget="yearMonth !== $store.getters['auth/currentYearMonth']"
+            :startProps="{
+              'loading': true,
+              'extern-loading': true,
+              'exern-no-data': true
+            }"
+          />
+          <gadget-manager
+            ref="RevenueGadgetRef"
+            startComponent="RevenueGadget"
+            :startProps="{
+              'extern-loading': true,
+              'extern-no-data': true
+            }"
+          />
+          <gadget-manager
+            ref="RevenueMaxMinGadgetRef"
+            startComponent="RevenueMaxMinGadget"
+            :startProps="{
+              'extern-loading': true,
+              'extern-no-data': true
+            }"
+          />
+          <gadget-manager
+            v-if="verifyRole('sales.revenue.all')"
+            ref="RevenueRankingGadgetRef"
+            startComponent="RevenueRankingGadget"
+            :disable-gadget="teamHeader?.type === 'seller'"
+            :loading="teamHeaderStatus === 'loading'"
+            :no-data="teamHeaderStatus === 'no-data'"
+            :start-props="{
+              'extern-loading': true,
+              'extern-no-data': true
+            }"
+          />
         </div>
+      </q-scroll-area>
+    </div>
 
-        <div
-          class="row justify-center q-mt-xs"
-        >
-          <div
-            class="col-12 col-md-6 col-lg-5 q-pa-xs"
-          >
-            <chart-manager
-              startComponent="RevenueDailyChart"
-              ref="RevenueDailyChartRef"
-              :loading="teamHeaderStatus === 'loading'"
-              :startProps="{
-                'extern-loading': false,
-                'extern-no-data': true
-              }"
-            />
-          </div>
-          <div
-            v-if="teamHeader?.type === 'team'"
-            class="col-12 col-md-6 col-lg-5 q-pa-xs"
-          >
-            <chart-manager
-              startComponent="RevenueResumeChart"
-              ref="RevenueResumeChartRef"
-              :loading="teamHeaderStatus === 'loading'"
-              :startProps="{
-                'extern-loading': false,
-                'extern-no-data': true
-              }"
-            />
-          </div>
-        </div>
-      </div>
-    </transition>
+    <div
+      style="display: flex; gap: 10px; max-width: 1400px;"
+      :style="`flex-direction: ${$q.screen.lt.md ? 'column' : 'row'}; height: ${chartContainerHeight}`"
+      class="q-mt-sm q-mx-auto"
+    >
+      <chart-manager
+        startComponent="RevenueDailyChart"
+        ref="RevenueDailyChartRef"
+        :loading="teamHeaderStatus === 'loading'"
+        :startProps="{
+          'extern-loading': true,
+          'extern-no-data': false,
+          flex: true
+        }"
+        flex
+        style="height: 100%; flex: 1;"
+      />
+      <chart-manager
+        v-if="verifyRole('sales.revenue.all')"
+        startComponent="RevenueResumeChart"
+        ref="RevenueResumeChartRef"
+        :loading="teamHeaderStatus === 'loading'"
+        :startProps="{
+          'extern-loading': true,
+          'extern-no-data': false,
+          flex: true
+        }"
+        flex
+        style="height: 100%; flex: 1"
+      />
+    </div>
+
     <global-dialogs />
   </q-page>
 </template>
 
 <script lang="ts">
 import ChartManager from 'components/ChartManager.vue'
-import { UseRevenuePage } from 'src/pages/Revenue/UseRevenuePage'
 import GadgetManager from 'components/GadgetManager.vue'
 import RevenueRankingGadget from 'src/components/sales/gadgets/RevenueRankingGadget.vue'
 import ChartSkeletonLoading from 'src/components/sales/charts/ChartSkeletonLoading.vue'
 import GadgetSkeletonLoading from 'src/components/sales/gadgets/GadgetSkeletonLoading.vue'
 import RevenueLoading from 'src/pages/Revenue/RevenueLoading.vue'
-import { emitter } from 'src/events'
 import ResponsiveHeader from 'src/components/core/ResponsiveHeader.vue'
 import RevenueHeader from './RevenueHeader.vue'
 import SalesHeader from 'src/components/sales/SalesHeader.vue'
 import GlobalDialogs from 'src/components/GlobalDialogs.vue'
+import YearMonthDropdown from 'src/components/YearMonthDropdown.vue'
+import TeamDropdown from 'src/components/sales/TeamDropdown.vue'
+import UserRoles from 'src/utils/userRoles.utils'
+import { useQuasar } from 'quasar'
 import { useYearMonthDropdown } from 'src/reactive/YearMonthDropdown'
-import { nextTick, defineComponent, ref, Ref, watch, onMounted } from 'vue'
 import { useTeamDropdown } from 'src/reactive/UseTeamDropdown'
 import { useAuth } from 'src/reactive/UseAuth'
+import { emitter } from 'src/events'
+import { UseRevenuePage } from 'src/pages/Revenue/UseRevenuePage'
+import { nextTick, defineComponent, ref, Ref, onMounted, computed } from 'vue'
 
 export default defineComponent({
   components: {
+    YearMonthDropdown,
+    TeamDropdown,
     GlobalDialogs,
     RevenueLoading,
     ChartSkeletonLoading,
@@ -145,8 +149,9 @@ export default defineComponent({
   },
 
   setup () {
-    const { yearMonth } = useYearMonthDropdown()
-    const { team: teamHeader, status: teamHeaderStatus, updateSelected } = useTeamDropdown(false)
+    const $q = useQuasar()
+    const { init: initYearMonth, yearMonth, YearMonthDropdownEmitter } = useYearMonthDropdown()
+    const { init: initTeamDropdownw, team: teamHeader, status: teamHeaderStatus, params, TeamDropdownEmitter } = useTeamDropdown()
     const { user } = useAuth()
 
     const toggleLeftDrawer = () => emitter.emit('toggleLeftDrawer')
@@ -161,6 +166,13 @@ export default defineComponent({
     const RevenueRankingGadgetRef: Ref<any> = ref(null)
     const RevenueMaxMinGadgetRef: Ref<any> = ref(null)
     const RevenueGadgetRef: Ref<any> = ref(null)
+
+    const chartContainerHeight = computed(() => {
+      if (UserRoles.verifyRole('sales.revenue.all')) {
+        return $q.screen.lt.md ? '1000px' : '500px'
+      }
+      return '500px'
+    })
 
     const update = (status: string) => {
       nextTick(() => {
@@ -187,7 +199,8 @@ export default defineComponent({
               type: teamHeader.value?.type,
               accumulated: false,
               'extern-no-data': false,
-              'extern-loading': false
+              'extern-loading': false,
+              flex: true
             }
           })
           if (teamHeader.value?.type === 'team') {
@@ -196,13 +209,17 @@ export default defineComponent({
               props: {
                 code: teamHeader.value?.code,
                 yearMonth: yearMonth.value,
-                type: teamHeader.value?.type
+                type: teamHeader.value?.type,
+                flex: true
               }
             })
             RevenueRankingGadgetRef.value?.onNewState({
               code: teamHeader.value?.code,
               yearMonth: yearMonth.value
             })
+          } else {
+            RevenueRankingGadgetRef.value?.onNewState({ 'extern-no-data': true })
+            RevenueResumeChartRef.value?.newState({ component: 'RevenueResumeChart', props: { 'extern-no-data': true } })
           }
         } else {
           RevenueGadgetRef.value?.onNewState({ 'extern-no-data': true })
@@ -215,15 +232,20 @@ export default defineComponent({
       })
     }
 
-    updateSelected.value = (status) => {
-      update(status)
-    }
+    onMounted(async () => {
+      initYearMonth()
+      if (yearMonth.value && user.value) {
+        params.value = { interval: [yearMonth.value, yearMonth.value], teamCode: user.value.cdEquipe }
+        await initTeamDropdownw(UserRoles.verifyRole('sales.revenue.all'))
+        update('loaded')
 
-    const updateIfSeller = () => user.value?.fgFuncao === 1 ? update('loaded') : false
-    watch(yearMonth, () => updateIfSeller())
-    onMounted(() => updateIfSeller())
+        YearMonthDropdownEmitter.on('updateYearMonthDropdown', () => update('loaded'))
+        TeamDropdownEmitter.on('updateTeamDropdown', () => update('loaded'))
+      }
+    })
 
     return {
+      verifyRole: UserRoles.verifyRole,
       teamHeaderStatus,
       charts: useRevenuePage.charts,
       gadgets: useRevenuePage.gadgets,
@@ -233,6 +255,7 @@ export default defineComponent({
       RevenueGadgetRef,
       RevenueRankingGadgetRef,
       RevenueTodayGadgetRef,
+      chartContainerHeight,
       user,
       yearMonth,
       teamHeader,

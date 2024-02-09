@@ -11,10 +11,12 @@ export interface UserCredential {
   idEmpresa: string;
   idCnpj: string;
   cdEquipe: number;
+  nmEquipe: string;
   idEquipe: number;
   fgFuncao: number;
   fgResponsavel: boolean;
-  dtFechamento: number
+  dtFechamento: number;
+  userRoles: string[]
 }
 
 export interface LoginDTO {

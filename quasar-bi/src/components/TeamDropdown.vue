@@ -62,7 +62,7 @@ export default defineComponent({
     } = useTeamDropdown()
     const { user } = useAuth()
 
-    onMounted(function () {
+    onMounted(() => {
       const cd = user.value?.cdEquipe
       if (cd != null) {
         init(cd).then(() => {

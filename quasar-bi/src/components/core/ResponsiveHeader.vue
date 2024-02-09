@@ -1,57 +1,50 @@
 <template>
   <q-header
-    class="bg-grey-4 text-black"
+    v-if="$q.screen.gt.sm"
   >
     <div
-      class="text-black"
+      class="bg-grey-4 full-width row items-center justify-center"
+      style="height: 64px"
     >
-      <template v-if="!$q.screen.lt.md">
-        <div
-          class="row justify-center items-center q-mx-sm"
-          style="height: 64px"
-        >
-          <q-btn
-            v-show="$q.platform.is.mobile || $q.screen.lt.md"
-            flat
-            dense
-            icon="menu"
-            class="absolute-left q-pa-md"
-            @click="toggleLeftDrawer()"
-          />
-          <slot />
-        </div>
-      </template>
-      <template v-else>
-        <q-toolbar
-          class="transparent lt-md"
-        >
-          <q-btn
-            flat
-            round
-            dense
-            icon="menu"
-            class="lt-md"
-            @click="toggleLeftDrawer()"
-          />
-          <q-space />
-          <q-btn
-            round
-            flat
-            class="lt-md"
-            :icon="toolbarInsetVisible ? 'expand_less' : 'expand_more'"
-            @click="toolbarInsetVisible = !toolbarInsetVisible"
-          />
-        </q-toolbar>
-        <q-slide-transition>
-          <div
-            v-show="toolbarInsetVisible"
-            class="absolute row justify-center full-width bg-grey-4 lt-md"
-          >
-            <slot />
-          </div>
-        </q-slide-transition>
-      </template>
+      <q-btn
+        v-show="$q.screen.lt.md"
+        flat
+        dense
+        icon="menu"
+        class="absolute-left q-pa-md"
+        @click="toggleLeftDrawer()"
+      />
+      <slot />
     </div>
+  </q-header>
+
+  <q-header v-else>
+    <q-toolbar
+      class="bg-primary"
+    >
+      <q-btn
+        flat
+        round
+        dense
+        icon="menu"
+        @click="toggleLeftDrawer()"
+      />
+      <q-space />
+      <q-btn
+        round
+        flat
+        :icon="toolbarInsetVisible ? 'expand_less' : 'expand_more'"
+        @click="toolbarInsetVisible = !toolbarInsetVisible"
+      />
+    </q-toolbar>
+    <q-slide-transition>
+      <div
+        v-show="toolbarInsetVisible"
+        class="collumn bg-grey-4 q-gutter-sm q-pa-sm"
+      >
+        <slot />
+      </div>
+    </q-slide-transition>
   </q-header>
 </template>
 

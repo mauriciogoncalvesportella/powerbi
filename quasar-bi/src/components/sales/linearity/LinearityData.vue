@@ -44,12 +44,13 @@ import CustomerDialog from 'src/components/sales/CustomerDialog.vue'
 import OrderInfoDialog from '../OrderInfoDialog.vue'
 import { GetOrderListFromCustomer, GlobalOrderInfoDialog } from 'src/reactive/UseGlobalDialogs'
 import { useLinearity } from 'src/reactive/UseLinearity'
-import { computed, defineComponent, ref, Ref, watch } from 'vue'
+import { computed, defineComponent, onMounted, ref, Ref, watch } from 'vue'
 import { format, addMonths } from 'date-fns'
 import { LinearityPerCustomerDTO } from 'src/dtos/sales/linearity.dto'
 import { apiProvider } from 'src/boot/axios'
 import { useTeamDropdown } from 'src/reactive/UseTeamDropdown'
 import { useAuth } from 'src/reactive/UseAuth'
+import UserRoles from 'src/utils/userRoles.utils'
 
 export default defineComponent({
   props: {
@@ -146,11 +147,18 @@ export default defineComponent({
         }
       }
     }
-    watch(teamHeader, () => loadData(true))
-    watch(countFilter, () => loadData(true))
+
     // watch(sortByColumn, () => loadData(true))
     // watch(sortType, () => loadData(true))
     watch(currentColorOptionIndex, () => loadData(true))
+    watch(teamHeader, () => loadData(true))
+    watch(countFilter, () => loadData(true))
+
+    onMounted(() => {
+      if (!UserRoles.verifyRole('linearity.all')) {
+        loadData(true)
+      }
+    })
 
     return {
       openOrderDialog,

@@ -1,5 +1,6 @@
 <template>
   <q-table
+    v-if="data.data.length > 0 || loading"
     id="linearity-q-table"
     flat
     bordered
@@ -14,7 +15,6 @@
     :loading="loading"
     :rows="data.data"
     :columns="collumns"
-    no-data-label="Vazio"
     @virtual-scroll="onLoad"
     @request="onRequest"
   >
@@ -68,16 +68,36 @@
         {{ props.value }}
       </q-td>
     </template>
-
-    <template v-slot:no-data>
-      <div class="full-width row flex-center text-accent q-gutter-sm">
-        <q-icon size="2em" name="sentiment_dissatisfied" />
-        <span>
-          Sem dados
+  </q-table>
+  <q-card
+    v-else
+    square
+    style="display: flex; flex-direction: column; height: 100%;"
+  >
+    <q-toolbar class="bg-primary text-white shadow-2">
+      <q-toolbar-title
+        class="text-weight-light text-subtitle2"
+      >
+        Clientes
+      </q-toolbar-title>
+    </q-toolbar>
+    <div style="flex-grow: 1; position: relative;">
+      <div
+        class="column no-data justify-center items-center full-width full-height"
+      >
+        <q-icon
+          name="cloud_off"
+          color="primary"
+          size="60px"
+        />
+        <span
+          class="text-weight-light text-subtitle1 row items-center"
+        >
+          Sem dados no intervalo
         </span>
       </div>
-    </template>
-  </q-table>
+    </div>
+  </q-card>
 </template>
 
 <script lang="ts">

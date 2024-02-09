@@ -74,6 +74,7 @@ import { useYearMonthDropdown } from 'src/reactive/YearMonthDropdown'
 import { useFactory } from 'src/reactive/UseFactory'
 import { defineComponent, computed, ref, Ref, nextTick, watch, onMounted, PropType } from 'vue'
 import FactoryProductResumeChart from 'src/components/sales/charts/factory/FactoryProductResumeChart.vue'
+import UserRoles from 'src/utils/userRoles.utils'
 
 export default defineComponent({
   components: {
@@ -113,11 +114,9 @@ export default defineComponent({
 
     const refFactoryProduct: Ref<any> = ref(null)
     const { factoryProps, teamProps, setTeamProps, setFactoryProps } = useFactory()
-    const { team: teamHeader, updateSelected, status: teamHeaderStatus } = useTeamDropdown(false)
-    const { yearMonth } = useYearMonthDropdown()
+    const { team: teamHeader, status: teamHeaderStatus, init: initTeamDropdownw, params, TeamDropdownEmitter } = useTeamDropdown()
+    const { yearMonth, init: initYearMonth, YearMonthDropdownEmitter } = useYearMonthDropdown()
     const { user } = useAuth()
-
-    setTeamProps(-1, '', 'team')
 
     const update = (status: string) => {
       if (status === 'loaded') {
@@ -144,16 +143,26 @@ export default defineComponent({
       })
     }
 
-    updateSelected.value = (status) => update(status)
-    const updateIfSeller = () => user.value?.fgFuncao === 1 ? update('loaded') : 0
-    onMounted(() => updateIfSeller())
-    watch(yearMonth, () => updateIfSeller())
+    onMounted(async () => {
+      setTeamProps(-1, '', 'team')
+      initYearMonth()
+      if (!yearMonth.value || !user.value) {
+        return
+      }
+      params.value = { interval: [yearMonth.value, yearMonth.value], teamCode: user.value?.cdEquipe }
+      await initTeamDropdownw(UserRoles.verifyRole('sales.factory.all'))
+      update('loaded')
+
+      YearMonthDropdownEmitter.on('updateYearMonthDropdown', () => update('loaded'))
+      TeamDropdownEmitter.on('updateTeamDropdown', () => update('loaded'))
+    })
 
     const onDataSelectResumeChart = ({ code, label }: any) => {
       setFactoryProps(code, label)
       if (teamHeader.value) {
         setTeamProps(teamHeader.value.code, teamHeader.value?.label, teamHeader.value?.type as 'seller' | 'team')
       }
+
       if (teamHeader.value?.type === 'team') {
         FactoryResumeTeamChartRef.value.newState({
           component: 'FactoryResumeTeamChart',

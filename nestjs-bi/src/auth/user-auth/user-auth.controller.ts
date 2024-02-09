@@ -2,6 +2,7 @@ import {BadRequestException, Body, Controller, Post, Req, Res, UnauthorizedExcep
 import {UnitOfWorkInterceptor} from "src/database/unit-of-work/uow.interceptor";
 import {LoginDTO} from "./user-auth.dto";
 import {UserAuthService} from "./user-auth.service";
+import { IgnoreJwt } from "../ignore-jwt.decorator";
 
 @UseInterceptors(UnitOfWorkInterceptor)
 @Controller('auth')
@@ -10,6 +11,7 @@ export class UserAuthController {
     private authService: UserAuthService
   ) {}
 
+  @IgnoreJwt()
   @Post('login')
   async login(@Body() data: LoginDTO) {
     const [tenantId, loginId] = data.email.split('/')
@@ -25,6 +27,7 @@ export class UserAuthController {
         password: data.password
       })
     } catch (err: any) {
+      console.error(err)
       throw new UnauthorizedException('invalid login')
     }
   }

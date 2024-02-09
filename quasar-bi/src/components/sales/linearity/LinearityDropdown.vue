@@ -2,7 +2,6 @@
   <q-btn-dropdown
     color="primary"
     class="full-width"
-    push
   >
     <template v-slot:label>
       <div

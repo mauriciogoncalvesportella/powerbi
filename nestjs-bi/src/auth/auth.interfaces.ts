@@ -10,6 +10,7 @@ export interface BaseAuth {
 export interface CommerceAuth extends BaseAuth {}
 export interface UserAuth extends BaseAuth {
   cdEquipe: number
+  nmEquipe: string
   cdVendedor: number
   idEquipe: string
   fgResponsavel: boolean
@@ -18,4 +19,6 @@ export interface UserAuth extends BaseAuth {
   idEmail: string
   fgFuncao: number
   expiresIn: number
+  userRoles: string[]
+  cdPerfilAcesso: number
 }

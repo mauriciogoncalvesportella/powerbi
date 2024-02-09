@@ -1,4 +1,5 @@
-FROM node:14-alpine as pre-quasar-bi
+FROM node:20-slim as pre-quasar-bi
+RUN corepack enable
 RUN mkdir -p /home/node/app
 RUN chown -R node:node /home/node/app
 COPY . /home/node/app
@@ -7,7 +8,7 @@ WORKDIR /home/node/app
 RUN yarn install
 RUN yarn quasar build --mode pwa
 
-FROM nginx:stable-alpine as quasar-bi
+FROM docker.io/nginx:stable-alpine as quasar-bi
 RUN mkdir -p /usr/share/nginx/html/public
 #COPY --from=pre-quasar-bi /home/node/app/public /usr/share/nginx/html/public
 COPY --from=pre-quasar-bi /home/node/app/dist/pwa /usr/share/nginx/html

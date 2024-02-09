@@ -1,4 +1,4 @@
-import {Inject, Injectable, forwardRef} from "@nestjs/common";
+import {BadRequestException, Inject, Injectable, forwardRef} from "@nestjs/common";
 import {VdPedidoProdutoEntity} from "src/database/entity/tenant/vd_pedido_produto.entity";
 import { UnitOfWorkEntity } from "src/database/unit-of-work/uow.provider";
 import {IImportData} from "../import-data.interface";
@@ -8,6 +8,7 @@ import {IDSFabrica} from "./ids-fabrica";
 import {IDSProduto} from "./ids-produto";
 import {IDSSubtabela} from "./ids-subtabela";
 import {IDSTabelaPreco} from "./ids-tabela-preco";
+import { VdPedidoEntity } from "src/database/entity/tenant/vd_pedido.entity";
 
 type MyEntity = VdPedidoProdutoEntity
 
@@ -26,6 +27,19 @@ export class IDSPedidoProduto extends ImportDataService<MyEntity> implements IIm
   }
 
   public async importData(entities: MyEntity[]) {
+    let cdPedido: number = entities[0].cdPedido
+    for (const entity of entities) {
+      if (entity.cdPedido !== cdPedido) {
+        throw new BadRequestException('Todos os produtos precisam estar vinculados ao mesmo pedido')
+      }
+    }
+
+    await this.unitOfWorkEntity.update(
+      VdPedidoProdutoEntity,
+      { fgSituacao: 9 },
+      { cdPedido: cdPedido }
+    )
+
     for (const entity of entities) {
       await this.idsPedido.has(entity.cdPedido)
       await this.idsProduto.has(entity.cdProduto)
@@ -42,12 +56,16 @@ export class IDSPedidoProduto extends ImportDataService<MyEntity> implements IIm
         await this.idsFabrica.has(entity.cdFabrica)
       }
 
+      entity.fgSituacao = 1
+
       try {
         await this.repository.save(entity)
       } catch (err: any) {
         throw err
       }
     }
+
+    await this.unitOfWorkEntity.delete(VdPedidoProdutoEntity, { fgSituacao: 9 })
   }
 
   public async deletePedidoProdutoFromPedido (cdPedido: number) {

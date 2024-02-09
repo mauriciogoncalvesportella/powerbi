@@ -1,6 +1,15 @@
 import { apiProvider } from 'src/boot/axios'
 import { ref, Ref, computed, watch } from 'vue'
 import { useAuth } from './UseAuth'
+import router from 'src/router'
+import UserRoles from 'src/utils/userRoles.utils'
+import mitt from 'mitt'
+
+type Events = {
+  updateTeamDropdown: void
+}
+
+const TeamDropdownEmitter = mitt<Events>()
 
 const { user } = useAuth()
 
@@ -18,7 +27,6 @@ interface GetdataParams {
 }
 
 export interface DropdownNode extends DropdownNodeDTO {}
-let initialized = false
 const lastRefreshed = { teamCode: 0 as number, interval: [] as string[] }
 const selectedKey = ref('')
 const loading = ref(false)
@@ -46,20 +54,6 @@ const getData = async (): Promise<DropdownNodeDTO | undefined> => {
   } finally {
     loading.value = false
   }
-}
-
-const floodFill = () => {
-  const checked: Record<string, boolean> = {}
-  function recursive (node?: DropdownNode) {
-    if (node && !checked[node.key]) {
-      checked[node.key] = true
-      map.value[node.key] = node
-      for (const child of node.children ?? []) {
-        recursive(child)
-      }
-    }
-  }
-  recursive(rootNode.value)
 }
 
 const nodeHasSeller = (node: DropdownNode) => {
@@ -94,42 +88,91 @@ const isLastRefreshed = () => {
   return false
 }
 
-const refresh = async () => {
-  if (user.value && user.value?.fgFuncao > 1) {
-    if (!isLastRefreshed()) {
-      map.value = {}
-      rootNode.value = await getData()
-      floodFill()
+const populateMapValue = () => {
+  const checked: Record<string, boolean> = {}
+  function recursive (node?: DropdownNode) {
+    if (node && !checked[node.key]) {
+      checked[node.key] = true
+      map.value[node.key] = node
+      for (const child of node.children ?? []) {
+        recursive(child)
+      }
     }
-    const node = map.value[selectedKey.value]
-    if (node && (node.type === 'seller' || nodeHasSeller(node))) {
-      updateSelected.value('loaded', node)
-    } else {
-      updateSelected.value('no-data', node)
-    }
+  }
+  recursive(rootNode.value)
+}
+
+const resetMapValue = () => {
+  if (!user.value) {
+    return
+  }
+
+  map.value[`team_${user.value.cdEquipe}`] = {
+    key: `team_${user.value.cdEquipe}`,
+    label: user.value.nmEquipe,
+    code: user.value.cdEquipe,
+    type: 'team'
+  }
+  map.value[`seller_${user.value.cdVendedor}`] = {
+    key: `seller_${user.value.cdVendedor}`,
+    label: user.value.nmVendedor,
+    code: user.value.cdVendedor,
+    type: 'seller'
   }
 }
 
-const init = () => {
-  if (!initialized) {
-    initialized = true
-    if (user.value?.fgFuncao === 1) {
-      map.value[`seller_${user.value.cdVendedor}`] = {
-        key: `seller_${user.value.cdVendedor}`,
-        label: user.value.nmVendedor,
-        code: user.value.cdVendedor,
-        type: 'seller'
-      }
-      selectedKey.value = `seller_${user.value?.cdVendedor}`
-    } else {
+const refresh = async () => {
+  if (!user.value) {
+    return
+  }
+
+  if (!isLastRefreshed()) {
+    resetMapValue()
+    rootNode.value = await getData()
+    populateMapValue()
+  }
+  // const node = map.value[selectedKey.value]
+  // if (node && (node.type === 'seller' || nodeHasSeller(node))) {
+  //   updateSelected.value('loaded', node)
+  // } else {
+  //   updateSelected.value('no-data', node)
+  // }
+}
+
+const init = async (all: boolean) => {
+  if (!user.value) {
+    return
+  }
+
+  resetMapValue()
+
+  if (!all) {
+    selectedKey.value = `seller_${user.value?.cdVendedor}`
+  } else {
+    if (selectedKey.value === '') {
       selectedKey.value = `team_${user.value?.cdEquipe}`
     }
   }
+
+  // if (selectedKey.value === '') {
+  //   selectedKey.value = selectedKey.value === ''
+  //     ? all
+  //       ? `team_${user.value?.cdEquipe}`
+  //       : `seller_${user.value?.cdVendedor}`
+  //     : selectedKey.value
+  // }
+
+  await refresh()
 }
 
 const updateSelectedKey = (value?: string) => {
   if (value) {
+    TeamDropdownEmitter.emit('updateTeamDropdown')
     selectedKey.value = value
+    if (!map.value[value]) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      label.value = user.value!.nmVendedor
+    }
     updateSelected.value('loaded', map.value[value])
   }
 }
@@ -152,6 +195,25 @@ const status = computed((): 'loading' | 'loaded' | 'no-data' => {
   return 'no-data'
 })
 
+const enabled = computed(() => {
+  const routeName = router.currentRoute.value.name?.toString() ?? ''
+  const role = UserRoles.routeToRole[routeName]
+  const enabled = UserRoles.verifyRole(`${role}.all`)
+
+  if (!enabled) {
+    if (user.value && !map.value[`seller_${user.value?.cdVendedor}`]) {
+      map.value[`seller_${user.value.cdVendedor}`] = {
+        key: `seller_${user.value.cdVendedor}`,
+        label: user.value.nmVendedor,
+        code: user.value.cdVendedor,
+        type: 'seller'
+      }
+    }
+  }
+
+  return enabled
+})
+
 /* Watchers */
 watch(team, value => {
   if (value) {
@@ -160,12 +222,9 @@ watch(team, value => {
 })
 
 /* Componentes Page utilizam o parâmetro "customParams" */
-export function useTeamDropdown (customParams: boolean | undefined = undefined) {
-  if (customParams !== undefined) {
-    isCustomParams.value = customParams
-  }
-
+export function useTeamDropdown () {
   return {
+    TeamDropdownEmitter,
     isCustomParams: computed(() => isCustomParams.value),
     params,
     label,
@@ -178,6 +237,7 @@ export function useTeamDropdown (customParams: boolean | undefined = undefined) 
     team,
     rootNode,
     loading,
-    refresh
+    refresh,
+    enabled
   }
 }

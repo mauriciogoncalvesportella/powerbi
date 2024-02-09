@@ -4,11 +4,11 @@ set -e
 
 build_nestjsbi(){
   echo "[nestjs] building image"
-  buildah bud -t nestjs-bi . > /dev/null
-  buildah tag nestjs-bi registry.digitalocean.com/datacompany/nestjs-bi > /dev/null
+  podman build -t nestjs-bi . > /dev/null
+  podman tag nestjs-bi registry.digitalocean.com/datacompany/nestjs-bi > /dev/null
 
   echo "[nestjs] uploading image"
-  buildah push registry.digitalocean.com/datacompany/nestjs-bi > /dev/null
+  podman push registry.digitalocean.com/datacompany/nestjs-bi > /dev/null
 
   echo "[nestjs] ok!"
 }

@@ -1,17 +1,11 @@
 <template>
-  <div>
-    <component
-      v-show="!loading && !disableGadget"
-      ref="gadgetRef"
-      :is="startComponent"
-      v-bind="props"
-      @next-state-year-month="onNextStateYearMonth($event)"
-      @next-state-team="onNextStateTeam($event)"
-    />
-    <gadget-skeleton-loading
-      v-show="loading"
-    />
-  </div>
+  <component
+    ref="gadgetRef"
+    :is="startComponent"
+    v-bind="props"
+    @next-state-year-month="onNextStateYearMonth($event)"
+    @next-state-team="onNextStateTeam($event)"
+  />
 </template>
 
 <script lang="ts">

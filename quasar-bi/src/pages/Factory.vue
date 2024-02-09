@@ -94,7 +94,7 @@ export default defineComponent({
     const refFactoryProduct: Ref<any> = ref(null)
     const refChartManager: Ref<any> = ref(null)
     const { factoryProps, teamProps, setTeamProps, setFactoryProps } = useFactory()
-    const { team: teamHeader, updateSelected, status: teamHeaderStatus } = useTeamDropdown(false)
+    const { team: teamHeader, updateSelected, status: teamHeaderStatus } = useTeamDropdown()
     const { yearMonth } = useYearMonthDropdown()
     const { user } = useAuth()
 
