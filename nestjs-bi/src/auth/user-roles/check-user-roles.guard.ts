@@ -15,8 +15,9 @@ export class CheckUserRolesGuard implements CanActivate {
   async canActivate (context: ExecutionContext): Promise<boolean> {
     const user: UserAuth | undefined = context.switchToHttp().getRequest().user
     const userRoles = this.reflector.get<UserRoles[]>('userRole', context.getHandler())
+    const ignoreJwt = this.reflector.get<boolean>('ignore_jwt', context.getHandler());
 
-    if (user?.role === 'user' && userRoles != null) {
+    if (user?.role === 'user' && !ignoreJwt && userRoles != null) {
       const roleVerified = await this.userRolesService.verifySpecificRoles(user, userRoles)
       if (!roleVerified) {
         throw new UnauthorizedException()

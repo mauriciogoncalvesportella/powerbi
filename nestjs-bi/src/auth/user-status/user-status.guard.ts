@@ -16,26 +16,24 @@ export class UserDeactivatedGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const user: UserAuth = context.switchToHttp().getRequest().user
-
     const ignoreJwt = this.reflector.get<boolean>('ignore_jwt', context.getHandler());
-    if (ignoreJwt) {
-      return true; // Ignora a validação se a rota for marcada como pública
-    }
 
-    if (!user) {
-      throw new UnauthorizedException('User is null')
-    }
+    if (user?.role === 'user' && !ignoreJwt) {
+      if (!user) {
+        throw new UnauthorizedException('User is null')
+      }
 
-    if (user.role !== 'user') {
-      throw new UnauthorizedException('Forbidden role')
-    }
+      if (user.role !== 'user') {
+        throw new UnauthorizedException('Forbidden role')
+      }
 
-    if (!(await this.userStatusService.getStatus(user.cdVendedor))) {
-      throw new UnauthorizedException('User is deactivated')
-    }
+      if (!(await this.userStatusService.getStatus(user.cdVendedor))) {
+        throw new UnauthorizedException('User is deactivated')
+      }
 
-    if (!user.expiresIn || user.expiresIn <= (new Date()).getTime()) {
-      throw new UnauthorizedException('Token expired')
+      if (!user.expiresIn || user.expiresIn <= (new Date()).getTime()) {
+        throw new UnauthorizedException('Token expired')
+      }
     }
 
     return true

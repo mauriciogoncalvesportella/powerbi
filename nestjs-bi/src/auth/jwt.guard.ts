@@ -11,7 +11,8 @@ export class JwtGuard extends AuthGuard('jwt') {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const ignoreJwt = this.reflector.get<boolean>('ignore_jwt', context.getHandler());
     if (ignoreJwt) {
-      return true; // Ignora a validação se a rota for marcada como pública
+      // Ignora a validação se a rota for marcada como pública
+      return true;
     }
 
     // Se não for uma rota pública, executa a lógica padrão do JwtGuard
