@@ -1,0 +1,9 @@
+POST http://localhost:3000/api/cadastro-empresa
+Content-Type: application/json
+Authorization: rkODRNynSJInUhcplOaBi8M5C8LuA3z3uLZdKsdcvaOrke92XC4JW87ZjdjN6NRWHar7HFJqvLibxCYqcRGqizlm3fmAtFI3xY2rGceTaFoQKd8lwAcdttqoqgO3h0zC
+
+{
+  "idFantasia": "Dejavu Fantasia",
+  "nmRazao": "Dejavu Razão",
+  "idCnpj": "49414921000190"
+}

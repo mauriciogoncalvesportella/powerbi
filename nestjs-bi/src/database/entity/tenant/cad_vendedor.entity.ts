@@ -17,6 +17,7 @@ export class CadVendedorEntity {
   @Column('int')
   @Index('IDX_CADVENDEDOR_CDPERFILACESSO')
   @IsInt()
+  @IsOptional()
   cdPerfilAcesso: number
 
   @Column({ length: 50 })
@@ -58,7 +59,14 @@ export class CadVendedorEntity {
   vlMetaMensal: number
 
   @BeforeInsert()
-  setJsMetaMensal () {
+  beforeInsert () {
+    switch (this.fgFuncao) {
+      case 1: this.cdPerfilAcesso = 2; break;
+      case 2: this.cdPerfilAcesso = 1; break;
+      case 3: this.cdPerfilAcesso = 0; break;
+      case 4: this.cdPerfilAcesso = 1; break;
+      default: 2;
+    }
     this.jsMetaMensal = this.jsMetaMensal ?? {}
   }
 

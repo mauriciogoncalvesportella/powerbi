@@ -27,7 +27,7 @@ export class CadEquipeEntity {
   @IsOptional()
   cdResponsavel: number
 
-  @Column({ length: 50 })
+  @Column({ length: 256 })
   @IsString()
   @IsOptional()
   nmEquipe: string

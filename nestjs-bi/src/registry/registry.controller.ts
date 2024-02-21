@@ -3,6 +3,7 @@ import {RegistryDTO} from './registry.dto';
 import {RegistryGuard} from './registry.guard';
 import {RegistryEmpresaService} from './registry-empresa.service';
 import {UnitOfWorkInterceptor} from 'src/database/unit-of-work/uow.interceptor';
+import { IgnoreJwt } from 'src/auth/ignore-jwt.decorator';
 
 @UseInterceptors(UnitOfWorkInterceptor)
 @UseGuards(RegistryGuard)
@@ -10,6 +11,7 @@ import {UnitOfWorkInterceptor} from 'src/database/unit-of-work/uow.interceptor';
 export class RegistryController {
   constructor(private registryEmpresaService: RegistryEmpresaService) {}
 
+  @IgnoreJwt()
   @Post()
   async registry (@Body() data: RegistryDTO) {
     return await this.registryEmpresaService.registry(data)

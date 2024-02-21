@@ -21,6 +21,13 @@ export class IDSVendedor extends ImportDataService<MyEntity> implements IImportD
 
   public async importData(entities: MyEntity[]) {
     for (const entity of entities) {
+      switch (entity.fgFuncao) {
+        case 1: entity.cdPerfilAcesso = 2; break;
+        case 2: entity.cdPerfilAcesso = 1; break;
+        case 3: entity.cdPerfilAcesso = 0; break;
+        case 4: entity.cdPerfilAcesso = 1; break;
+        default: entity.cdPerfilAcesso = 2;
+      }
       await this.idsEquipe.has(entity.cdEquipe)
       if ((await this.unitOfWorkEntity.findOne(CadVendedorEntity, entity.cd)) != undefined) {
         await this.unitOfWorkEntity.save(entity)

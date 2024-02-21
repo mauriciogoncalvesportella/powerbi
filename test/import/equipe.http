@@ -1,0 +1,9 @@
+POST http://localhost:3000/api/import/empresa-module/equipe
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiY29tbWVyY2UiLCJpZEVtcHJlc2EiOiJkZWphdnVfZmFudGFzaWEiLCJjZEVtcHJlc2FQdWJsaWMiOjE1MCwiaWRDbnBqIjoiNDk0MTQ5MjEwMDAxOTAiLCJpYXQiOjE3MDg1MjA4MzgsImV4cCI6MTcwODUyMDgzOH0.pbiBbK2RpSS-dCzPk--FInJqO6QvF9bZ6pFc3EpbEH8
+
+[{
+  "cd": 0,
+  "nmEquipe": "Geral",
+  "idEquipe": "0"
+}]
