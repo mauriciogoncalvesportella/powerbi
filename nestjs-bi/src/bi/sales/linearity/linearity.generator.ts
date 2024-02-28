@@ -52,6 +52,7 @@ export class LinearityGenerator implements ILinearityGenerator {
     2: 'Ruim',
     1: 'Péssimo',
     0: 'Novos',
+    'R': 'Reativados'
   }
 
   private async aggregate (queryResult: QueryResultPerCustomer[]): Promise<AggregatePerCustomer[]> {

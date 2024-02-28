@@ -80,7 +80,7 @@ export default defineComponent({
     }
 
     const getDataFunction = async () => {
-      const response = await apiProvider.axios.get<ProfitDailyBars>('bi/sales/profit/markup-daily-chart', {
+      const response = await apiProvider.axios.get<ProfitDailyBars>('bi/sales/revenue/markup-daily-chart', {
         params: {
           cd: props.code,
           'year-month': props.yearMonth,

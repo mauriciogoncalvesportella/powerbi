@@ -1,25 +1,25 @@
 import {Inject, Injectable} from "@nestjs/common";
 import {RequestMetadata} from "src/shared/request-metadata.provider";
 import {DateOrYearMonthParam} from "../sales.types";
-import {ProfitGoalGenerator} from "./profit-goal/profit-goal.generator";
-import {ProfitGoal} from "./profit-goal/profit-goal.types";
-import {DailyProfitDTO, IProfitGenerator, IProfitQueries, IProfitStrategy, IProfitStrategyObject, QueryResultDailyProfit, ResumeProfitDTO} from "./profit.interfaces";
-import {ProfitQueries} from "./profit.queries";
+import {RevenueGoalGenerator} from "./revenue-goal/revenue-goal.generator";
+import {RevenueGoal} from "./revenue-goal/revenue-goal.types";
+import {DailyRevenueDTO, IRevenueGenerator, IRevenueQueries, IRevenueStrategy, IRevenueStrategyObject, QueryResultDailyRevenue, ResumeRevenueDTO} from "./revenue.interfaces";
+import {RevenueQueries} from "./revenue.queries";
 import { addDays, differenceInBusinessDays, getDay, isWeekend } from 'date-fns'
 import {ArrayUtils} from "src/utils/array.utils";
 const _ = require('lodash')
 
 @Injectable()
-export class ProfitGenerator implements IProfitGenerator {
+export class RevenueGenerator implements IRevenueGenerator {
   constructor (
-    @Inject(ProfitQueries)
-    private queries: IProfitQueries,
+    @Inject(RevenueQueries)
+    private queries: IRevenueQueries,
     private metadata: RequestMetadata,
-    private goal: ProfitGoalGenerator,
+    private goal: RevenueGoalGenerator,
     private requestMetadata: RequestMetadata
   ) {}
 
-  async daily (cd: number, type: 'team' | 'seller', yearMonth: string, cumulative: boolean, strategy: IProfitStrategy): Promise<DailyProfitDTO> {
+  async daily (cd: number, type: 'team' | 'seller', yearMonth: string, cumulative: boolean, strategy: IRevenueStrategy): Promise<DailyRevenueDTO> {
     /*
       Quando cumulativo é necessário o valor de `queryResultRegular`. Então,
       em todos os casos os valores cumulativo e normal são buscados do banco
@@ -95,7 +95,7 @@ export class ProfitGenerator implements IProfitGenerator {
     }
   }
 
-  async resume (teamCode: number, dateOrYearMonth: DateOrYearMonthParam, strategy: IProfitStrategy): Promise<ResumeProfitDTO> {
+  async resume (teamCode: number, dateOrYearMonth: DateOrYearMonthParam, strategy: IRevenueStrategy): Promise<ResumeRevenueDTO> {
     const yearMonthGoal = dateOrYearMonth.type === 'yearMonth'
       ? dateOrYearMonth.yearMonthParam 
       : await this.metadata.getYearMonth(dateOrYearMonth.dateParam[0])
@@ -121,11 +121,11 @@ export class ProfitGenerator implements IProfitGenerator {
     }
   }
 
-  static RevenueStrategy = class implements IProfitStrategy {
-    execute (row: IProfitStrategyObject) {
+  static RevenueStrategy = class implements IRevenueStrategy {
+    execute (row: IRevenueStrategyObject) {
       return row.billed + row.not_billed 
     }
-    executeDailyGoal (goal: ProfitGoal, dates: string[], cumulative: boolean): number[] {
+    executeDailyGoal (goal: RevenueGoal, dates: string[], cumulative: boolean): number[] {
       const date0 = new Date(dates[0])
       const date1 = new Date(dates[dates.length - 1])
       const differenceCount = differenceInBusinessDays(addDays(date1, 1), date0)
@@ -140,35 +140,35 @@ export class ProfitGenerator implements IProfitGenerator {
       }
       return goals
     }
-    executeResumeGoal (goal: Map<string, ProfitGoal>, codes: number[], types: string[]): number[] {
+    executeResumeGoal (goal: Map<string, RevenueGoal>, codes: number[], types: string[]): number[] {
       return codes.map((_, index) => goal.get(`${codes[index]}_${types[index]}`).revenue ?? 0)
     }
   }
 
-  static MarkupStrategy = class implements IProfitStrategy {
-    execute (row: IProfitStrategyObject) {
+  static MarkupStrategy = class implements IRevenueStrategy {
+    execute (row: IRevenueStrategyObject) {
       return row.cost_value === 0
         ? 0
         : (((row.not_billed + row.billed)/row.cost_value) - 1) * 100
     }
-    executeDailyGoal (goal: ProfitGoal, dates: string[]): number[] {
+    executeDailyGoal (goal: RevenueGoal, dates: string[]): number[] {
       return dates.map(() => goal.markup)
     }
-    executeResumeGoal (goal: Map<string, ProfitGoal>, codes: number[], types: string[]): number[] {
+    executeResumeGoal (goal: Map<string, RevenueGoal>, codes: number[], types: string[]): number[] {
       return codes.map((_, index) => goal.get(`${codes[index]}_${types[index]}`).markup ?? 0)
     }
   }
 
-  static ProfitStrategy = class implements IProfitStrategy {
-    execute (row: IProfitStrategyObject) {
+  static ProfitStrategy = class implements IRevenueStrategy {
+    execute (row: IRevenueStrategyObject) {
       return row.cost_value === 0
         ? 0
         : (row.profit_value/(row.billed + row.not_billed)) * 100
     }
-    executeDailyGoal (goal: ProfitGoal, dates: string[]): number[] {
+    executeDailyGoal (goal: RevenueGoal, dates: string[]): number[] {
       return dates.map(() => goal.profit)
     }
-    executeResumeGoal (goal: Map<string, ProfitGoal>, codes: number[], types: string[]): number[] {
+    executeResumeGoal (goal: Map<string, RevenueGoal>, codes: number[], types: string[]): number[] {
       return codes.map((value, index) => goal.get(`${codes[index]}_${types[index]}`).profit ?? 0)
     }
   }

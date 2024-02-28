@@ -69,7 +69,7 @@ const routes: RouteRecordRaw[] = [
       {
         name: Routes.DASHBOARD_MANAGEUSERS,
         path: '/dashboard/users',
-        beforeEnter: UserRolesMiddleware('manage_sellers'),
+        beforeEnter: UserRolesMiddleware('manage_users'),
         component: () => import('pages/UserStatus.vue')
       }
     ]

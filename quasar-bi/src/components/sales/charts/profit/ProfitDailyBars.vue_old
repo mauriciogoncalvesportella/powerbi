@@ -180,7 +180,7 @@ export default defineComponent({
     }
 
     this.getDataFunction = () => {
-      return this.$api.axios.get<DailyBarsDTO>('bi/sales/profit/daily-bars', {
+      return this.$api.axios.get<DailyBarsDTO>('bi/sales/revenue/daily-bars', {
         params: {
           cds: this.cds,
           yearMonth: this.yearMonth,

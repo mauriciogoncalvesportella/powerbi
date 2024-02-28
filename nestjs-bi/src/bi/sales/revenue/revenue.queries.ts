@@ -5,9 +5,9 @@ import {RequestMetadata} from "src/shared/request-metadata.provider";
 import {Connection} from "typeorm";
 import {DateOrYearMonthParam} from "../sales.types";
 import {DateValueUtils} from "../utils/date-value.utils";
-import {IProfitQueries, QueryResultDailyProfit, QueryResultResumeProfit} from "./profit.interfaces";
+import {IRevenueQueries, QueryResultDailyRevenue, QueryResultResumeRevenue} from "./revenue.interfaces";
 
-export class ProfitQueries implements IProfitQueries {
+export class RevenueQueries implements IRevenueQueries {
   constructor (
     @Inject('CONNECTION')
     private connection: Connection,
@@ -39,7 +39,7 @@ export class ProfitQueries implements IProfitQueries {
     }
   }
 
-  async daily (cd: number, type: 'team' | 'seller', yearMonth: string): Promise<QueryResultDailyProfit[]> {
+  async daily (cd: number, type: 'team' | 'seller', yearMonth: string): Promise<QueryResultDailyRevenue[]> {
     const { sellerCode, teamId } = await this.getSellerCodeOrTeamId(cd, type)
     const dates = await this.getDates(yearMonth)
     const [query, parameters] = this.connection.driver.escapeQueryWithParameters(
@@ -65,7 +65,7 @@ export class ProfitQueries implements IProfitQueries {
     return output
   }
 
-  async dailyCumulative (cd: number, type: 'team' | 'seller', yearMonth: string): Promise<QueryResultDailyProfit[]> {
+  async dailyCumulative (cd: number, type: 'team' | 'seller', yearMonth: string): Promise<QueryResultDailyRevenue[]> {
     const { sellerCode, teamId } = await this.getSellerCodeOrTeamId(cd, type)
     const dates = await this.getDates(yearMonth)
     const [query, parameters] = this.connection.driver.escapeQueryWithParameters(
@@ -97,7 +97,7 @@ export class ProfitQueries implements IProfitQueries {
     return await this.connection.manager.query(query, parameters)
   }
 
-  async resume (teamCode: number, dateOryearMonth: DateOrYearMonthParam): Promise<QueryResultResumeProfit[]> {
+  async resume (teamCode: number, dateOryearMonth: DateOrYearMonthParam): Promise<QueryResultResumeRevenue[]> {
     const { dateParam, yearMonthParam } = dateOryearMonth
     const { idEquipe: teamId } = await this.connection.manager.findOneOrFail(CadEquipeEntity, teamCode)
     const [query, parameters] = this.connection.driver.escapeQueryWithParameters(

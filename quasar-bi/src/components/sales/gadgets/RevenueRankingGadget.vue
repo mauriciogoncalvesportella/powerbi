@@ -81,7 +81,7 @@ export default defineComponent({
           cd: []
         }
       }
-      const url = 'bi/sales/profit/revenue-resume-chart'
+      const url = 'bi/sales/revenue/revenue-resume-chart'
       const options = {
         params: {
           'team-code': props.code,

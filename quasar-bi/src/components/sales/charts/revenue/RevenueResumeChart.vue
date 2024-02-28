@@ -100,7 +100,7 @@ export default defineComponent({
     const chartComponent = ref(null) as Ref<any>
     const $store = useStore()
     const getDataFunction = async () => {
-      return await apiProvider.axios.get<any>('bi/sales/profit/revenue-resume-chart', {
+      return await apiProvider.axios.get<any>('bi/sales/revenue/revenue-resume-chart', {
         params: {
           'team-code': props.code,
           'year-month': props.yearMonth,

@@ -108,7 +108,7 @@ export default defineComponent({
     const isCurrentYearMonth = computed(() => useAuth().currentYearMonth.value === props.yearMonth)
 
     const getDataFunction = async () => {
-      const response = await apiProvider.axios.get<RevenueDailyDTO>('bi/sales/profit/revenue-daily-chart', {
+      const response = await apiProvider.axios.get<RevenueDailyDTO>('bi/sales/revenue/revenue-daily-chart', {
         params: {
           cd: props.code,
           'year-month': props.yearMonth,

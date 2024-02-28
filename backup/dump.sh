@@ -1,7 +1,13 @@
 #!/bin/bash
 
 read -p "schema: " schema
-read -s -p "doadmin password: " password
+
+if [ -z "$DO_ADMIN_PG_PASSWORD" ]; then
+  read -s -p "doadmin password: " password
+else
+  password=$DO_ADMIN_PG_PASSWORD
+fi
+
 echo
 
 PGPASSWORD="$password" pg_dump \

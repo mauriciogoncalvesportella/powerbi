@@ -131,7 +131,7 @@ export default defineComponent({
         ? undefined
         : props.yearMonth
 
-      const data = await apiProvider.axios.get<ProfitResumeBars>('bi/sales/profit/markup-resume-chart', {
+      const data = await apiProvider.axios.get<ProfitResumeBars>('bi/sales/revenue/markup-resume-chart', {
         params: {
           'team-code': props.teamCode,
           'year-month': yearMonthParam,

@@ -75,7 +75,7 @@ export default defineComponent({
         }
       }
 
-      const { data } = await apiProvider.axios.get<any>('/bi/sales/profit/revenue-daily-chart', {
+      const { data } = await apiProvider.axios.get<any>('/bi/sales/revenue/revenue-daily-chart', {
         params: {
           cd: props.code,
           type: props.type,

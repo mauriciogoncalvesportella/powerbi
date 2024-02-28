@@ -106,7 +106,7 @@ export default defineComponent({
     this.seriesGoalTitle = 'Meta'
 
     this.getDataFunction = async () => {
-      return await this.$api.axios.get<ResumeBarsDTO>('bi/sales/profit/resume-chart', {
+      return await this.$api.axios.get<ResumeBarsDTO>('bi/sales/revenue/resume-chart', {
         params: {
           cds: this.cds,
           yearMonth: this.yearMonth,

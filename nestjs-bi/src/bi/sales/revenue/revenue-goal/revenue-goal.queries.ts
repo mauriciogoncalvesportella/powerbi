@@ -3,11 +3,11 @@ import {CadEquipeMetaMensalEntity} from "src/database/entity/tenant/cad_equipe_m
 import {CadVendedorEntity} from "src/database/entity/tenant/cad_vendedor.entity";
 import {CadVendedorMetaMensalEntity} from "src/database/entity/tenant/cad_vendedor_meta_mensal.entity";
 import {Connection, EntityManager, QueryFailedError} from "typeorm";
-import {ProfitGoal} from "./profit-goal.types";
-import {IProfitGoalQueries, ProfitGoalQueryResult} from "./profit-goal.types";
+import {RevenueGoal} from "./revenue-goal.types";
+import {IRevenueGoalQueries, RevenueGoalQueryResult} from "./revenue-goal.types";
 
 @Injectable()
-export class ProfitGoalQueries implements IProfitGoalQueries {
+export class RevenueGoalQueries implements IRevenueGoalQueries {
   private manager: EntityManager
 
   constructor (
@@ -21,7 +21,7 @@ export class ProfitGoalQueries implements IProfitGoalQueries {
     return `ten_${this.connection.name}`
   }
 
-  async teamGoal (code: number, yearMonth: string): Promise<ProfitGoalQueryResult> {
+  async teamGoal (code: number, yearMonth: string): Promise<RevenueGoalQueryResult> {
     const [query, parameters ] = this.connection.driver.escapeQueryWithParameters(
       `
       SELECT
@@ -38,11 +38,11 @@ export class ProfitGoalQueries implements IProfitGoalQueries {
       { teamCode: code, yearMonth },
       {}
     )
-    const queryResult: ProfitGoalQueryResult[] = await this.connection.manager.query(query, parameters)
+    const queryResult: RevenueGoalQueryResult[] = await this.connection.manager.query(query, parameters)
     return queryResult[0]
   }
 
-  async sellerGoal (code: number, yearMonth: string): Promise<ProfitGoalQueryResult> {
+  async sellerGoal (code: number, yearMonth: string): Promise<RevenueGoalQueryResult> {
     const [query, parameters ] = this.connection.driver.escapeQueryWithParameters(
       `
       SELECT
@@ -60,11 +60,11 @@ export class ProfitGoalQueries implements IProfitGoalQueries {
       { sellerCode: code, yearMonth },
       {}
     )
-    const queryResult: ProfitGoalQueryResult[] = await this.connection.manager.query(query, parameters)
+    const queryResult: RevenueGoalQueryResult[] = await this.connection.manager.query(query, parameters)
     return queryResult[0]
   }
 
-  async resumeGoal (code: number, yearMonth: string): Promise<ProfitGoalQueryResult[]> {
+  async resumeGoal (code: number, yearMonth: string): Promise<RevenueGoalQueryResult[]> {
     const [query, parameters ] = this.connection.driver.escapeQueryWithParameters(
       `
       SELECT

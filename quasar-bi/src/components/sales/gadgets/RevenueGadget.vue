@@ -115,7 +115,7 @@ export default defineComponent({
     const gadgetBase: Ref<any> = ref(null)
     const noDataFunction = (data: any) => data.noData
     const dataFunction = async (): Promise<any> => {
-      const response = await apiProvider.axios.get<RevenueDailyDTO>('/bi/sales/profit/revenue-daily-chart', {
+      const response = await apiProvider.axios.get<RevenueDailyDTO>('/bi/sales/revenue/revenue-daily-chart', {
         params: {
           cd: props.code,
           type: props.type,

@@ -1,212 +1,135 @@
-import {BadRequestException, Controller, Get, ParseArrayPipe, ParseIntPipe, Query, UseGuards} from "@nestjs/common";
+import {BadRequestException, Controller, Get, Inject, Injectable, ParseBoolPipe, ParseIntPipe, Query, UseGuards} from "@nestjs/common";
 import {JwtGuard} from "src/auth/jwt.guard";
 import {Role} from "src/auth/role.decorator";
-import {SupervisorGuard} from "src/auth/supervisor.guard";
-import {IdMesAnoValidationPipe} from "src/shared/id-mes-ano.pipe";
-import {TeamService} from "../team/team.service";
-import {RevenueDailyService} from "./revenue-daily.service";
-import {RevenueMonthlyService} from "./revenue-monthly.service";
-import {RevenueComparativeService} from "./revenue-comparative.service";
-import {RevenueService} from "./revenue.service";
-import {RevenueMonthlyDTO} from "./revenue.types";
-import {YearMonthArrayValidationPipe} from "src/shared/year-month-array.pipe";
-import {formatToTimeZone} from "date-fns-timezone";
 import {UserDeactivatedGuard} from "src/auth/user-status/user-status.guard";
+import {IdMesAnoValidationPipe} from "src/shared/id-mes-ano.pipe";
+import {DateOrYearMonthParam} from "../sales.types";
+import {RevenueGenerator} from "./revenue.generator";
+import {IRevenueGenerator} from "./revenue.interfaces";
+import { CheckUserRoles } from "src/auth/user-roles/check-user-roles.decorator";
+import UserRoles from "src/auth/user-roles/user-roles.enum";
 
 @UseGuards(JwtGuard, UserDeactivatedGuard)
 @Role('user')
-@Controller('/bi/sales/faturamento')
+@Controller('/bi/sales/revenue')
 export class RevenueController {
   constructor (
-    private dailyService: RevenueDailyService,
-    private monthlyService: RevenueMonthlyService,
-    private teamService: TeamService,
-    private revenueService: RevenueService,
-    private revenueComparativeService: RevenueComparativeService
+    @Inject(RevenueGenerator)
+    private generator: IRevenueGenerator
   ) {}
 
-  @Get('comparativo')
-  async comparative (
-    @Query('sellersCode', new ParseArrayPipe({ items: Number, optional: true }))
-    sellersCode: number[],
-    @Query('teamsCode', new ParseArrayPipe({ items: Number, optional: true }))
-    teamsCode: number[],
-    @Query('count', new ParseIntPipe())
-    count: number,
-    @Query('yearMonth', IdMesAnoValidationPipe)
+  @Get('profit-daily-chart')
+  async getProfitDailyBars (
+    @Query('cd', ParseIntPipe)
+    cd: number,
+    @Query('year-month', IdMesAnoValidationPipe)
     yearMonth: string,
-    @Query('accumulated')
-    accumulated: boolean
+    @Query('type')
+    type: 'seller' | 'team',
+    @Query('cumulative', new ParseBoolPipe())
+    cumulative: boolean
   ) {
-    /*
-    if (count > 3) {
-      throw new BadRequestException('Count cannot be greater than 3')
-    }
-    */
+    if (!['seller', 'team'].includes(type))
+      throw new BadRequestException('type must be \'teams\' or \'sellers\'')
+    return this.generator.daily(cd, type, yearMonth, cumulative, new RevenueGenerator.ProfitStrategy)
+  }
 
-    if (sellersCode === undefined && teamsCode === undefined) {
-      throw new BadRequestException(`'sellersCode' and 'teamsCode' are 'undefined'`)
-    }
-   
-    if (teamsCode) {
-      ({ cds: sellersCode } = await this.teamService.sellersFromTeams(...teamsCode))
+  @Get('markup-daily-chart')
+  async getMarkupDailyBars (
+    @Query('cd', ParseIntPipe)
+    cd: number,
+    @Query('year-month', IdMesAnoValidationPipe)
+    yearMonth: string,
+    @Query('type')
+    type: 'seller' | 'team',
+    @Query('cumulative', new ParseBoolPipe())
+    cumulative: boolean
+  ) {
+    if (!['seller', 'team'].includes(type))
+      throw new BadRequestException('type must be \'teams\' or \'sellers\'')
+    return this.generator.daily(cd, type, yearMonth, cumulative, new RevenueGenerator.MarkupStrategy)
+  }
+
+  @CheckUserRoles(UserRoles.sales_revenue)
+  @Get('revenue-daily-chart')
+  async getRevenueDailyBars (
+    @Query('cd', ParseIntPipe)
+    cd: number,
+    @Query('year-month', IdMesAnoValidationPipe)
+    yearMonth: string,
+    @Query('type')
+    type: 'seller' | 'team',
+    @Query('cumulative', new ParseBoolPipe())
+    cumulative: boolean
+  ) {
+    if (!['seller', 'team'].includes(type))
+      throw new BadRequestException('type must be \'teams\' or \'sellers\'')
+    return await this.generator.daily(cd, type, yearMonth, cumulative, new RevenueGenerator.RevenueStrategy)
+  }
+
+  @Get('profit-resume-chart')
+  async getProfitResume (
+    @Query('team-code', ParseIntPipe)
+    teamCode: number,
+    @Query('year-month', new IdMesAnoValidationPipe(false))
+    yearMonth: string,
+    @Query('init-day')
+    initDay: string,
+    @Query('end-day')
+    endDay: string
+  ) {
+    let dateOrYearMonthParam: DateOrYearMonthParam
+    if (initDay && endDay) {
+      dateOrYearMonthParam = new DateOrYearMonthParam('dates', [initDay, endDay])
+    } else if (yearMonth) {
+      dateOrYearMonthParam = new DateOrYearMonthParam('yearMonth', yearMonth)
     } else {
-      await this.teamService.sellers(...sellersCode)
+      throw new BadRequestException('initDay and endDay and yearMonth can\'t be null')
     }
-
-    return this.revenueComparativeService.daily(sellersCode, yearMonth, count, accumulated)
+    return this.generator.resume(teamCode, dateOrYearMonthParam, new RevenueGenerator.ProfitStrategy)
   }
 
-  /*
-   * Team Realted
-  */
-  @UseGuards(SupervisorGuard)
-  @Get('times')
-  async getRevenueFromTeam (
-    @Query('cds', new ParseArrayPipe({ items: Number, separator: ',' }))
-    cds: number[],
-    @Query('yearMonthArray', new ParseArrayPipe({ items: String, separator: ',' }), YearMonthArrayValidationPipe )
-    yearMonthArray: string[]
-  ) {
-    return await this.revenueService.getRevenueFromTeams(cds, yearMonthArray)
-  }
-
-  @UseGuards(SupervisorGuard)
-  @Get('diario')
-  async get (
-    @Query('cds', new ParseArrayPipe({ items: Number, separator: ',' }))
-    cds: number[],
-    @Query('idMesAno', IdMesAnoValidationPipe)
-    idMesAno: string
-  ) {
-    return await this.dailyService.fromTeam(cds, idMesAno)
-  }
-
-  @UseGuards(SupervisorGuard)
-  @Get('diario/acumulado')
-  async accumulated (
-    @Query('cds', new ParseArrayPipe({ items: Number, separator: ',' }))
-    cds: number[],
-    @Query('idMesAno', IdMesAnoValidationPipe)
-    idMesAno: string
-  ) {
-    return await this.dailyService.fromTeamAccumulated(cds, idMesAno)
-  }
-
-  @UseGuards(SupervisorGuard)
-  @Get('mensal')
-  async getMonthly (
-    @Query('cds', new ParseArrayPipe({ items: Number, separator: ',', optional: true }))
-    cds: number[],
-    @Query('teamCode')
+  @Get('markup-resume-chart')
+  async getMarkupResume (
+    @Query('team-code', ParseIntPipe)
     teamCode: number,
-    @Query('idMesAno', IdMesAnoValidationPipe)
-    idMesAno: string,
-    @Query('initDay')
-    initDay: number,
-    @Query('endDay')
-    endDay: number,
-  ): Promise<RevenueMonthlyDTO> {
-
-    if (teamCode == undefined && cds == undefined) {
-      throw new BadRequestException('\'cdTeam\' and \'cd\' params null')
-    }
-
-    let dates: string[] = null
+    @Query('year-month', IdMesAnoValidationPipe)
+    yearMonth: string,
+    @Query('init-day')
+    initDay: string,
+    @Query('end-day')
+    endDay: string
+  ) {
+    let dateOrYearMonthParam: DateOrYearMonthParam
     if (initDay && endDay) {
-      const initDate = formatToTimeZone(initDay, 'YYYY-MM-DD HH:mm', { timeZone: 'America/Sao_Paulo' })
-      const endDate = formatToTimeZone(endDay, 'YYYY-MM-DD HH:mm', { timeZone: 'America/Sao_Paulo' })
-      // const initDate = `${idMesAno}-${initDay} 00:00:00`
-      // const endDate = `${idMesAno}-${endDay} 23:59:59`
-      dates = [initDate, endDate]
+      dateOrYearMonthParam = new DateOrYearMonthParam('dates', [initDay, endDay])
+    } else if (yearMonth) {
+      dateOrYearMonthParam = new DateOrYearMonthParam('yearMonth', yearMonth)
+    } else {
+      throw new BadRequestException('initDay and endDay and yearMonth can\'t be null')
     }
-
-    if (cds?.length > 0) {
-      return await this.monthlyService.fromTeams(cds, idMesAno, dates)
-    }
-
-    const teams = (await this.teamService.teamsFromNonLeafTeams([teamCode]))
-      .map(it => it.cd)
-
-    const sellers = (await this.teamService.sellersFromLeafTeams([teamCode]))
-      .map(it => it.cd)
-
-    const sellersRevenue = await this.monthlyService.fromSellers(sellers, idMesAno, dates)
-    const teamsRevenue = await this.monthlyService.fromTeams(teams, idMesAno, dates)
-
-    sellersRevenue.values.push(...teamsRevenue.values)
-    sellersRevenue.goalValues.push(...teamsRevenue.goalValues)
-    sellersRevenue.cds.push(...teamsRevenue.cds)
-    sellersRevenue.types.push(...teamsRevenue.types)
-    sellersRevenue.labels.push(...teamsRevenue.labels)
-
-    return sellersRevenue
+    return this.generator.resume(teamCode, dateOrYearMonthParam, new RevenueGenerator.MarkupStrategy)
   }
 
-  /*
-   * Seller Related
-  */
-  @Get('vendedores')
-  async getRevenueFromSellers (
-    @Query('cds', new ParseArrayPipe({ items: Number, separator: ',' }))
-    cds: number[],
-    @Query('yearMonthArray', new ParseArrayPipe({ items: String, separator: ',' }), YearMonthArrayValidationPipe )
-    yearMonthArray: string[]
-  ) {
-    return await this.revenueService.getRevenueFromSellers(cds, yearMonthArray)
-  }
-
-  @Get('diario-vendedor')
-  async dailyBySeller (
-    @Query('cds', new ParseArrayPipe({ items: Number, separator: ',' }))
-    cds: number[],
-    @Query('idMesAno', IdMesAnoValidationPipe)
-    idMesAno: string
-  ) {
-    return await this.dailyService.fromSellers(cds, idMesAno)
-  }
-
-  @Get('diario-vendedor/acumulado')
-  async accumulatedBySeller (
-    @Query('cds', new ParseArrayPipe({ items: Number, separator: ',' }))
-    cds: number[],
-    @Query('idMesAno', IdMesAnoValidationPipe)
-    idMesAno: string
-  ) {
-    return await this.dailyService.fromSellersAccumulated(cds, idMesAno)
-  }
-
-  @Get('mensal-vendedor')
-  async monhtlyBySeller (
-    @Query('cds', new ParseArrayPipe({ items: Number, separator: ',', optional: true }))
-    cds: number[],
-    @Query('teamCode')
+  @Get('revenue-resume-chart')
+  async getRevenueResume (
+    @Query('team-code', ParseIntPipe)
     teamCode: number,
-    @Query('idMesAno', IdMesAnoValidationPipe)
-    idMesAno: string,
-    @Query('initDay')
-    initDay: number,
-    @Query('endDay')
-    endDay: number,
+    @Query('year-month', IdMesAnoValidationPipe)
+    yearMonth: string,
+    @Query('init-day')
+    initDay: string,
+    @Query('end-day')
+    endDay: string
   ) {
-    if (teamCode == undefined && cds == undefined) {
-      throw new BadRequestException('\'cdTeam\' and \'cd\' params null')
-    }
-
-    let dates: string[] = null
+    let dateOrYearMonthParam: DateOrYearMonthParam
     if (initDay && endDay) {
-      const initDate = formatToTimeZone(initDay, 'YYYY-MM-DD HH:mm', { timeZone: 'America/Sao_Paulo' })
-      const endDate = formatToTimeZone(endDay, 'YYYY-MM-DD HH:mm', { timeZone: 'America/Sao_Paulo' })
-      // const initDate = `${idMesAno}-${initDay} 00:00:00`
-      // const endDate = `${idMesAno}-${endDay} 23:59:59`
-      dates = [initDate, endDate]
+      dateOrYearMonthParam = new DateOrYearMonthParam('dates', [initDay, endDay])
+    } else if (yearMonth) {
+      dateOrYearMonthParam = new DateOrYearMonthParam('yearMonth', yearMonth)
+    } else {
+      throw new BadRequestException('initDay and endDay and yearMonth can\'t be null')
     }
-
-    if (cds?.length > 0) {
-      return await this.monthlyService.fromSellers(cds, idMesAno, dates)
-    }
-
-    const sellers = (await this.teamService.sellersFromLeafTeams([teamCode])).map(seller => seller.cd)
-    return await this.monthlyService.fromSellers(sellers, idMesAno, dates)
+    return this.generator.resume(teamCode, dateOrYearMonthParam, new RevenueGenerator.RevenueStrategy)
   }
 }

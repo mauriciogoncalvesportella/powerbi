@@ -125,7 +125,7 @@ export default defineComponent({
         title: 'Gerenciar Vendedores',
         icon: 'manage_accounts',
         to: Routes.DASHBOARD_MANAGEUSERS,
-        enabled: UserRoles.verifyRole('manage_sellers')
+        enabled: UserRoles.verifyRole('manage_users')
       }
     ])
 
