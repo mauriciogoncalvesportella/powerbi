@@ -1,0 +1,3 @@
+[submodule "quasar-bi/build"]
+	path = quasar-bi/build
+	url = git@github.com:DataCompanyCloud/quasar-bi-build.git
