@@ -8,7 +8,8 @@ const Routes = {
   DASHBOARD_LINEARITY: 'dashboard_linearity',
   DASHBOARD_FACTORY: 'dashboard_factory',
   DASHBOARD_CATEGORY: 'dashboard_category',
-  DASHBOARD_MANAGEUSERS: 'dashboard_manageusers'
+  DASHBOARD_MANAGEUSERS: 'dashboard_manageusers',
+  DASHBOARD_SALES_CAMPAIGN: 'dashboard-sales-campaign' // incluida nova rota
 }
 
 export default Routes

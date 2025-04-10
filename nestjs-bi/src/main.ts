@@ -5,7 +5,7 @@ import {DBExceptionFilter} from './shared/dbexception.filter';
 import {json, urlencoded} from 'express'
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule); // criação de instância do Nest em AppModule
 
   if (!process.env.PROD) {
     app.enableCors({ credentials: true })
@@ -16,6 +16,6 @@ async function bootstrap() {
   app.use(json({ limit: '8mb' }));
   app.use(urlencoded({ extended: true, limit: '8mb' }));
   app.setGlobalPrefix('api')
-  await app.listen(3000);
+  await app.listen(3000); // escuta na porta 3000
 }
 bootstrap();

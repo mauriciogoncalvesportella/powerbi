@@ -71,6 +71,14 @@ const routes: RouteRecordRaw[] = [
         path: '/dashboard/users',
         beforeEnter: UserRolesMiddleware('manage_users'),
         component: () => import('pages/UserStatus.vue')
+      },
+      // Adicione a nova rota aqui:
+      {
+        name: Routes.DASHBOARD_SALES_CAMPAIGN,
+        path: '/dashboard/campanha-vendas',
+        // Remova qualquer middleware que não exista, ou ajuste conforme necessário
+        // beforeEnter: UserRolesMiddleware('manage_campaigns'),
+        component: () => import('pages/campaigns/SalesCampaign.vue')
       }
     ]
   },

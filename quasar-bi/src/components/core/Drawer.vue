@@ -126,7 +126,15 @@ export default defineComponent({
         icon: 'manage_accounts',
         to: Routes.DASHBOARD_MANAGEUSERS,
         enabled: UserRoles.verifyRole('manage_users')
+      },
+      {
+        id: 'sales-campaign',
+        title: 'Campanha de Vendas',
+        icon: 'campaign',
+        to: Routes.DASHBOARD_SALES_CAMPAIGN,
+        enabled: true // Ajuste conforme as permissões do seu sistema
       }
+
     ])
 
     items.value = items.value.filter(item => item.enabled)
