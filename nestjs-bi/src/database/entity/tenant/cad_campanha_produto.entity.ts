@@ -4,7 +4,7 @@ import {CadProdutoEntity} from "./cad_produto.entity";
 @Entity('cad_campanha_produto')
 export class CadCampanhaProdutoEntity {
   @PrimaryColumn('int')
-  cd: number
+  cd: number // chave primária
 
 //  @OneToOne(() => CadProdutoEntity, cadProduto => cadProduto.cd)
 //  @JoinColumn({ name: 'cdProduto' })

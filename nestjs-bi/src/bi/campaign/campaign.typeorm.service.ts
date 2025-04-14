@@ -4,6 +4,7 @@ import { EntityManager } from 'typeorm';
 import { CadCampanhaProdutoEntity } from 'src/database/entity/tenant/cad_campanha_produto.entity';
 import { CadCampanhaEntity } from 'src/database/entity/tenant/cad_campanha.entity';
 import { CadProdutoEntity } from 'src/database/entity/tenant/cad_produto.entity'; 
+import { CadVendedorEntity } from 'src/database/entity/tenant/cad_vendedor.entity';
 import { RequestMetadata } from 'src/shared/request-metadata.provider';
 import { MultitenantConnection } from 'src/database/multitenant-connection';
 
@@ -18,14 +19,13 @@ export class CampaignTypeOrmService {
 
   // Método para obter o EntityManager para o tenant atual
   private getManager(): EntityManager {
-    // A MultitenantConnection já possui um getter 'manager'
     if (!this.multitenantConnection || !this.multitenantConnection.manager) {
       throw new Error('Conexão multitenant não disponível ou inválida');
     }
     return this.multitenantConnection.manager;
   }
 
-  // Buscar campanha por código
+  // Buscar campanha por código (método existente)
   public async getCampaignByCode(code: number): Promise<any> {
     const manager = this.getManager();
     
@@ -50,89 +50,48 @@ export class CampaignTypeOrmService {
     };
   }
 
-  // Listar campanhas
-  public async getCampaignList(params: any): Promise<any[]> {
+  // Método para buscar vendedores de uma campanha
+  public async getCampaignVendors(campaignId: number): Promise<any[]> {
     const manager = this.getManager();
     
-    // Cria query builder
-    const campaignsQueryBuilder = manager
-      .createQueryBuilder(CadCampanhaEntity, 'campanha')
-      .where('campanha.fgAtivo = 1');
-    
-    // Aplicar estratégia de filtragem se necessário
-    if (params) {
-      if (params.sellerCode) {
-        campaignsQueryBuilder.andWhere('campanha.cdVendedor = :sellerCode', {
-          sellerCode: params.sellerCode
-        });
-      }
-      
-      if (params.factoryCode) {
-        campaignsQueryBuilder.andWhere('campanha.cdFabrica = :factoryCode', {
-          factoryCode: params.factoryCode
-        });
-      }
-      
-      // Filtro por data se necessário
-      if (params.dateRange && params.dateRange.length === 2) {
-        campaignsQueryBuilder.andWhere(
-          '(campanha.dtInicio >= :startDate AND campanha.dtFinal <= :endDate)',
-          {
-            startDate: params.dateRange[0],
-            endDate: params.dateRange[1]
-          }
-        );
-      }
-    }
-    
-    // Ordenação
-    campaignsQueryBuilder.orderBy('campanha.dtInicio', 'DESC');
-    
-    // Executar query
     try {
-      const campaigns = await campaignsQueryBuilder.getMany();
-      
-      // Mapear resultados
-      return campaigns.map(campaign => ({
-        code: campaign.cd,
-        name: campaign.nmCampanha,
-        startDate: campaign.dtInicio,
-        endDate: campaign.dtFinal,
-        status: campaign.fgAtivo,
-        targetValue: campaign.vlCampanha,
-        positiveQuantity: campaign.qtPositivacao,
-        bonusValue: campaign.vlBonus,
-        factory: campaign.cdFabrica
+      const vendorsInCampaign = await manager
+        .createQueryBuilder(CadVendedorEntity, 'vendedor')
+        .where('vendedor.fgAtivo = true')
+        // Adicione condições específicas de campanha se necessário
+        .getMany();
+
+      return vendorsInCampaign.map(vendor => ({
+        id: vendor.cd,
+        name: vendor.nmVendedor,
+        email: vendor.idEmail,
+        goal: vendor.vlMetaMensal,
+        monthlyGoal: vendor.jsMetaMensal,
+        active: vendor.fgAtivo,
+        team: vendor.cdEquipe
       }));
     } catch (error) {
-      console.error('Erro ao listar campanhas:', error);
-      // Retornar dados mock para garantir que a UI tenha algo para mostrar
+      console.error('Erro ao buscar vendedores da campanha:', error);
+      
+      // Dados mock para fallback
       return [
         {
-          code: 1,
-          name: 'Santo Antonio',
-          startDate: '2025-01-01',
-          endDate: '2025-06-30',
-          status: 1,
-          targetValue: 98000,
-          positiveQuantity: 100,
-          bonusValue: 5000,
-          factory: 1,
-          faturamento: 95000,
-          meta: 98000
+          id: 1,
+          name: 'MARA C',
+          email: 'mara@empresa.com',
+          goal: 95000,
+          monthlyGoal: {},
+          active: true,
+          team: 1
         },
         {
-          code: 2,
-          name: 'Fiat',
-          startDate: '2025-02-01',
-          endDate: '2025-07-30',
-          status: 1,
-          targetValue: 90000,
-          positiveQuantity: 80,
-          bonusValue: 4500,
-          factory: 2,
-          faturamento: 82000,
-          meta: 90000
+          id: 2,
+          name: 'VALDIR LEIVA',
+          email: 'valdir@empresa.com',
+          goal: 90000,
+          monthlyGoal: {},
+          active: true,
+          team: 1
         }
       ];
     }

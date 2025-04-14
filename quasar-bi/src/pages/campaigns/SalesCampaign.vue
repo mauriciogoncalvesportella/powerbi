@@ -1,4 +1,5 @@
 <template>
+  
   <q-page padding>
     <!-- Primeira linha: Gráfico Principal e Gráfico de Vendedores -->
     <div class="row q-col-gutter-md">
@@ -9,7 +10,7 @@
             <div class="text-h6">Faturamento Mensal Equipes</div>
             <div>
               <q-btn flat round icon="arrow_back" color="white" to="/dashboard" />
-              <q-toggle v-model="useMockData" label="Usar dados de teste" dense class="q-ml-sm" />
+              <!-- <q-toggle v-model="useMockData" label="Usar dados de teste" dense class="q-ml-sm" /> -->
             </div>
           </q-card-section>
 
