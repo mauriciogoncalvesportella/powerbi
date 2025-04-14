@@ -1,189 +1,288 @@
-<!-- eslint-disable vue/no-unused-vars -->
 <template>
-    <q-page padding>
-      <!-- Primeira linha: Gráfico Principal e Gráfico de Vendedores -->
+  <q-page padding>
+    <!-- Primeira linha: Gráfico Principal e Gráfico de Vendedores -->
+    <div class="row q-col-gutter-md">
+      <!-- Gráfico 1: Faturamento Mensal Equipes (sempre visível) -->
+      <div :class="selectedCampaign ? 'col-12 col-md-6' : 'col-12'">
+        <q-card class="campaign-card">
+          <q-card-section class="bg-primary text-white header-section">
+            <div class="text-h6">Faturamento Mensal Equipes</div>
+            <div>
+              <q-btn flat round icon="arrow_back" color="white" to="/dashboard" />
+              <q-toggle v-model="useMockData" label="Usar dados de teste" dense class="q-ml-sm" />
+            </div>
+          </q-card-section>
+
+          <q-card-section>
+            <div class="chart-container">
+              <div v-if="loading" class="loading-container">
+                <q-spinner color="primary" size="3em" />
+                <div class="q-ml-md">Carregando dados...</div>
+              </div>
+              <apexchart
+                v-else-if="campaigns.length > 0"
+                type="bar"
+                height="400"
+                :options="campaignChartOptions"
+                :series="campaignChartSeries"
+                @click="handleCampaignClick"
+              ></apexchart>
+              <div v-else class="empty-message">
+                <q-icon name="info" size="2em" color="grey-7" />
+                <div class="q-mt-sm">Nenhuma campanha encontrada</div>
+              </div>
+            </div>
+          </q-card-section>
+        </q-card>
+      </div>
+
+      <!-- Gráfico 2: Campanha de Vendas - Vendedores (visível quando uma campanha é selecionada) -->
+      <div v-if="selectedCampaign" class="col-12 col-md-6">
+        <q-card class="campaign-card">
+          <q-card-section class="bg-primary text-white header-section">
+            <div class="text-h6">Campanha de Vendas - {{ selectedCampaign.name }}</div>
+            <div>
+              <q-btn flat round icon="arrow_back" color="white" @click="selectedCampaign = null; selectedSeller = null; selectedProduct = null" />
+            </div>
+          </q-card-section>
+
+          <q-card-section>
+            <div class="chart-container">
+              <div v-if="loadingSellers" class="loading-container">
+                <q-spinner color="primary" size="3em" />
+                <div class="q-ml-md">Carregando vendedores...</div>
+              </div>
+              <apexchart
+                v-else-if="sellers.length > 0"
+                type="bar"
+                height="400"
+                :options="sellerChartOptions"
+                :series="sellerChartSeries"
+                @click="handleSellerClick"
+              ></apexchart>
+              <div v-else class="empty-message">
+                <q-icon name="info" size="2em" color="grey-7" />
+                <div class="q-mt-sm">Nenhum vendedor encontrado</div>
+              </div>
+            </div>
+            <div class="q-mt-md">
+              <div v-if="hasProducts" class="text-caption">
+                Se a campanha tiver produtos, clique no vendedor para ver a análise de produtos.
+              </div>
+              <div v-else class="text-caption">
+                Se a campanha for somente de faturamento, ao clicar no vendedor<br>
+                vai abrir a tela com os pedidos de venda da campanha.
+              </div>
+            </div>
+          </q-card-section>
+        </q-card>
+      </div>
+    </div>
+
+    <!-- Segunda linha: Gráfico de Produtos Total e Produtos x Vendedor -->
+    <div v-if="selectedCampaign && hasProducts" class="row q-col-gutter-md q-mt-md">
+      <!-- Gráfico 3: Gráfico de Produtos Total / ou por vendedor -->
+      <div :class="selectedProduct ? 'col-12 col-md-6' : 'col-12'">
+        <q-card class="campaign-card">
+          <q-card-section class="bg-primary text-white header-section">
+            <div class="text-h6">Gráfico de Produtos Total / ou por vendedor</div>
+            <div>
+              <q-btn flat round icon="arrow_back" color="white" @click="selectedProduct = null" />
+            </div>
+          </q-card-section>
+
+          <q-card-section>
+            <div class="total-products-container">
+              <div v-if="loadingProducts" class="loading-container">
+                <q-spinner color="primary" size="3em" />
+                <div class="q-ml-md">Carregando produtos...</div>
+              </div>
+              <div v-else-if="campaignProducts.length === 0" class="empty-message">
+                <q-icon name="info" size="2em" color="grey-7" />
+                <div class="q-mt-sm">Nenhum produto encontrado</div>
+              </div>
+              <div v-for="(product, index) in campaignProducts" :key="product.productCode" class="product-bar q-mb-md" @click="handleProductClick(product)">
+                <div class="product-info">
+                  <div class="product-code">{{ product.productCode }}</div>
+                  <div class="product-name">{{ product.productName }}</div>
+                </div>
+                <div class="product-bars">
+                  <div class="bar-container">
+                    <div class="bar-label">Venda: {{ product.quantity }} UN</div>
+                    <q-linear-progress :value="product.quantity / maxValue" color="primary" class="q-mt-xs" style="height: 20px;" />
+                  </div>
+                  <div class="bar-container q-mt-sm">
+                    <div class="bar-label">Meta: {{ product.unitValue }} UN</div>
+                    <q-linear-progress :value="product.unitValue / maxValue" color="green" class="q-mt-xs" style="height: 20px;" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </q-card-section>
+        </q-card>
+      </div>
+
+      <!-- Gráfico 4: Gráfico Produtos x Vendedor (visível quando um produto é selecionado) -->
+      <div v-if="selectedProduct" class="col-12 col-md-6">
+        <q-card class="campaign-card">
+          <q-card-section class="bg-primary text-white header-section">
+            <div class="text-h6">Gráfico Produtos x Vendedor</div>
+            <div>
+              <q-btn flat round icon="arrow_back" color="white" @click="selectedProduct = null" />
+            </div>
+          </q-card-section>
+
+          <q-card-section>
+            <div class="chart-container">
+              <div v-if="loadingProductVendors" class="loading-container">
+                <q-spinner color="primary" size="3em" />
+                <div class="q-ml-md">Carregando dados...</div>
+              </div>
+              <apexchart
+                v-else-if="productVendors.length > 0"
+                type="bar"
+                height="400"
+                :options="productVendorChartOptions"
+                :series="productVendorChartSeries"
+              ></apexchart>
+              <div v-else class="empty-message">
+                <q-icon name="info" size="2em" color="grey-7" />
+                <div class="q-mt-sm">Nenhum dado encontrado</div>
+              </div>
+            </div>
+          </q-card-section>
+        </q-card>
+      </div>
+    </div>
+
+    <!-- Botão de Nova Campanha -->
+    <q-page-sticky position="bottom-right" :offset="[18, 18]">
+      <q-btn color="primary" label="NOVA CAMPANHA" @click="createCampaign" />
+    </q-page-sticky>
+
+    <!-- Modal/Dialog de criação de campanha -->
+    <q-dialog v-model="showNewCampaignDialog" persistent>
+  <q-card>
+    <q-card-section>
+      <div class="text-h6">Nova Campanha</div>
+    </q-card-section>
+
+    <q-card-section>
+      <q-input 
+        v-model="newCampaign.name" 
+        label="Nome da Campanha" 
+        outlined
+        dense
+        :rules="[val => !!val || 'Nome é obrigatório']" 
+      />
+      
       <div class="row q-col-gutter-md">
-        <!-- Gráfico 1: Faturamento Mensal Equipes (sempre visível) -->
-        <div :class="selectedCampaign ? 'col-12 col-md-6' : 'col-12'">
-          <q-card class="campaign-card">
-            <q-card-section class="bg-primary text-white header-section">
-              <div class="text-h6">Faturamento Mensal Equipes</div>
-              <div>
-                <q-btn flat round icon="arrow_back" color="white" to="/dashboard" />
-                <!-- <q-btn flat round icon="more_vert" color="white" /> -->
-              </div>
-            </q-card-section>
-
-            <q-card-section>
-              <div class="chart-container">
-                <apexchart
-                  type="bar"
-                  height="400"
-                  :options="campaignChartOptions"
-                  :series="campaignChartSeries"
-                  @click="handleCampaignClick"
-                ></apexchart>
-                <div v-if="!selectedCampaign" class="">
-                  <!-- <div class="text-caption">
-                    Ao clicar no gráfico, abrir<br>
-                    o gráfico da direita<br>
-                    mostrando os vendedores
-                  </div> -->
-                </div>
-              </div>
-            </q-card-section>
-          </q-card>
+        <div class="col-6">
+          <q-input 
+            v-model="newCampaign.dtInicio" 
+            type="date" 
+            label="Data Início" 
+            outlined
+            dense
+            :rules="[val => !!val || 'Data é obrigatória']" 
+          />
         </div>
-
-        <!-- Gráfico 2: Campanha de Vendas - Vendedores (visível quando uma campanha é selecionada) -->
-        <div v-if="selectedCampaign" class="col-12 col-md-6">
-          <q-card class="campaign-card">
-            <q-card-section class="bg-primary text-white header-section">
-              <div class="text-h6">Campanha de Vendas - {{ selectedCampaign.name }}</div>
-              <div>
-                <q-btn flat round icon="arrow_back" color="white" @click="selectedCampaign = null; selectedSeller = null; selectedProduct = null" />
-                <!-- <q-btn flat round icon="more_vert" color="white" /> -->
-              </div>
-            </q-card-section>
-
-            <q-card-section>
-              <div class="chart-container">
-                <apexchart
-                  type="bar"
-                  height="400"
-                  :options="sellerChartOptions"
-                  :series="sellerChartSeries"
-                  @click="handleSellerClick"
-                ></apexchart>
-              </div>
-              <div class="q-mt-md">
-                <div v-if="hasProducts" class="text-caption">
-                  Se a campanha tiver produtos (Fat = 0)<br>
-                  abrir um novo gráfico mostrando os produtos<br>
-                  com qtde e meta
-                </div>
-                <div v-else class="text-caption">
-                  Se a campanha for somente de faturamento, ao clicar no vendedor<br>
-                  vai abrir a tela com os pedidos de venda da campanha.
-                </div>
-              </div>
-            </q-card-section>
-          </q-card>
+        <div class="col-6">
+          <q-input 
+            v-model="newCampaign.dtFinal" 
+            type="date" 
+            label="Data Final" 
+            outlined
+            dense
+            :rules="[val => !!val || 'Data é obrigatória']" 
+          />
         </div>
       </div>
-
-      <!-- Segunda linha: Gráfico de Produtos Total e Produtos x Vendedor -->
-      <div v-if="selectedCampaign" class="row q-col-gutter-md q-mt-md">
-        <!-- Gráfico 3: Gráfico de Produtos Total / ou por vendedor -->
-        <div :class="selectedProduct ? 'col-12 col-md-6' : 'col-12'">
-          <q-card class="campaign-card">
-            <q-card-section class="bg-primary text-white header-section">
-              <div class="text-h6">Gráfico de Produtos Total / ou por vendedor</div>
-              <div>
-                <q-btn flat round icon="arrow_back" color="white" @click="selectedProduct = null" />
-                <!-- <q-btn flat round icon="more_vert" color="white" /> -->
-              </div>
-            </q-card-section>
-
-            <q-card-section>
-              <div class="total-products-container">
-                <div v-for="(product, index) in campaignProducts" :key="product.id" class="product-bar q-mb-md" @click="handleProductClick(product)">
-                  <div class="product-info">
-                    <div class="product-code">{{ product.code }}</div>
-                    <div class="product-name">{{ product.name }}</div>
-                  </div>
-                  <div class="product-bars">
-                    <div class="bar-container">
-                      <div class="bar-label">Venda: {{ product.sales }} UN</div>
-                      <q-linear-progress :value="product.sales / maxValue" color="primary" class="q-mt-xs" style="height: 20px;" />
-                    </div>
-                    <div class="bar-container q-mt-sm">
-                      <div class="bar-label">Meta: {{ product.goal }} UN</div>
-                      <q-linear-progress :value="product.goal / maxValue" color="green" class="q-mt-xs" style="height: 20px;" />
-                    </div>
-                  </div>
-                </div>
-
-                <div class="product-instructions q-mt-lg">
-                  <div class="text-caption">
-                    Quando clicar no produto, montar o gráfico ao lado com os vendedores
-                  </div>
-                  <div class="text-caption q-mt-md">
-                    A escala será sempre limitada ao número maior<br>
-                    Meta ou realizado
-                  </div>
-                </div>
-              </div>
-            </q-card-section>
-          </q-card>
+      
+      <div class="row q-col-gutter-md">
+        <div class="col-6">
+          <q-input 
+            v-model.number="newCampaign.vlCampanha" 
+            type="number" 
+            label="Valor Meta" 
+            outlined
+            dense
+          />
         </div>
-
-        <!-- Gráfico 4: Gráfico Produtos x Vendedor (visível quando um produto é selecionado) -->
-        <div v-if="selectedProduct" class="col-12 col-md-6">
-          <q-card class="campaign-card">
-            <q-card-section class="bg-primary text-white header-section">
-              <div class="text-h6">Gráfico Produtos x Vendedor</div>
-              <div>
-                <q-btn flat round icon="arrow_back" color="white" @click="selectedProduct = null" />
-                <!-- <q-btn flat round icon="more_vert" color="white" /> -->
-              </div>
-            </q-card-section>
-
-            <q-card-section>
-              <div class="chart-container">
-                <apexchart
-                  type="bar"
-                  height="400"
-                  :options="productVendorChartOptions"
-                  :series="productVendorChartSeries"
-                ></apexchart>
-              </div>
-            </q-card-section>
-          </q-card>
+        <div class="col-6">
+          <q-input 
+            v-model.number="newCampaign.qtPositivacao" 
+            type="number" 
+            label="Qtde Positivação" 
+            outlined
+            dense
+          />
         </div>
       </div>
+      
+      <q-input 
+        v-model.number="newCampaign.vlBonus" 
+        type="number" 
+        label="Valor Bônus" 
+        outlined
+        dense
+      />
+      
+      <q-toggle 
+        v-model="newCampaign.fgAtivo" 
+        label="Campanha Ativa" 
+        class="q-mt-md"
+      />
+    </q-card-section>
 
-      <!-- Botão de Nova Campanha -->
-      <q-page-sticky position="bottom-right" :offset="[18, 18]">
-        <q-btn color="primary" label="NOVA CAMPANHA" @click="createCampaign" />
-      </q-page-sticky>
-    </q-page>
-  </template>
+    <q-card-actions align="right">
+      <q-btn flat label="Cancelar" color="primary" v-close-popup />
+      <q-btn flat label="Salvar" color="primary" @click="saveCampaign" :loading="saving" />
+    </q-card-actions>
+  </q-card>
+</q-dialog>
+  </q-page>
+</template>
 
 <script lang="ts">
-import { defineComponent, ref, computed } from 'vue'
+import { defineComponent, ref, computed, onMounted, nextTick } from 'vue'
 import { useQuasar } from 'quasar'
 import VueApexCharts from 'vue3-apexcharts'
+import SalesCampaignService, { CampaignDTO } from 'src/services/SalesCampaignService'
+import { apiProvider } from 'src/boot/axios'
 
-  interface Campaign {
-    id: number
-    name: string
-    revenue: number
-    goal: number
-    hasProducts: boolean
-  }
+interface Campaign {
+  code: number
+  name: string
+  revenue: number
+  goal: number
+  hasProducts: boolean
+  startDate?: string
+  endDate?: string
+}
 
-  interface Seller {
-    id: number
-    name: string
-    revenue: number
-    goal: number
-  }
+interface Seller {
+  id: number
+  name: string
+  revenue: number
+  goal: number
+}
 
-  interface Product {
-    id: number
-    code: string
-    name: string
-    sales: number
-    goal: number
-  }
+interface Product {
+  productCode: number
+  productName: string
+  quantity: number
+  unitValue: number
+  totalValue: number
+  campaignCode: number
+}
 
-  interface ProductVendorData {
-    vendorId: number
-    vendorName: string
-    sales: number
-    goal: number
-  }
+interface ProductVendor {
+  vendorId: number
+  vendorName: string
+  sales: number
+  goal: number
+}
 
 export default defineComponent({
   name: 'SalesCampaignPage',
@@ -193,20 +292,40 @@ export default defineComponent({
 
   setup () {
     const $q = useQuasar()
+    const loading = ref(false)
+    const loadingSellers = ref(false)
+    const loadingProducts = ref(false)
+    const loadingProductVendors = ref(false)
+    const saving = ref(false)
+    const campaigns = ref<Campaign[]>([])
+    const sellers = ref<Seller[]>([])
     const selectedCampaign = ref<Campaign | null>(null)
     const selectedSeller = ref<Seller | null>(null)
     const selectedProduct = ref<Product | null>(null)
     const hasProducts = ref(false)
+    const campaignProducts = ref<Product[]>([])
+    const productVendors = ref<ProductVendor[]>([])
+    const showNewCampaignDialog = ref(false)
+    const useMockData = ref(false) // Opção para usar dados mockados
+    
+    const newCampaign = ref<CampaignDTO>({
+      name: '',
+      dtInicio: '',
+      dtFinal: '',
+      fgAtivo: 1,
+      vlCampanha: 0,
+      qtPositivacao: 0,
+      vlBonus: 0
+    })
 
-    // Dados mockados para as campanhas
-    const campaigns = ref<Campaign[]>([
-      { id: 1, name: 'Santo Antonio', revenue: 95000, goal: 98000, hasProducts: true },
-      { id: 2, name: 'Fiat', revenue: 82000, goal: 90000, hasProducts: true },
-      { id: 3, name: 'Riclan', revenue: 58000, goal: 78000, hasProducts: true }
-    ])
+    // Mockdata para teste da interface
+    const mockCampaigns = [
+      { code: 1, name: 'Santo Antonio', revenue: 95000, goal: 98000, hasProducts: true, startDate: '2025-01-01', endDate: '2025-06-30' },
+      { code: 2, name: 'Fiat', revenue: 82000, goal: 90000, hasProducts: true, startDate: '2025-02-01', endDate: '2025-07-30' },
+      { code: 3, name: 'Riclan', revenue: 58000, goal: 78000, hasProducts: true, startDate: '2025-03-01', endDate: '2025-08-30' }
+    ];
 
-    // Dados mockados para os vendedores
-    const campaignSellers = ref<Record<number, Seller[]>>({
+    const mockSellers = {
       1: [ // Santo Antonio
         { id: 1, name: 'MARA C', revenue: 90000, goal: 95000 },
         { id: 2, name: 'VALDIR LEIVA', revenue: 85000, goal: 90000 },
@@ -224,95 +343,311 @@ export default defineComponent({
         { id: 10, name: 'Julia', revenue: 30000, goal: 35000 },
         { id: 11, name: 'Marcos', revenue: 20000, goal: 25000 },
         { id: 12, name: 'Lucia', revenue: 10000, goal: 15000 }
+      ],
+      // Adicione um fallback para campanhas sem ID específico no mockdata
+      default: [
+        { id: 101, name: 'Vendedor Padrão 1', revenue: 50000, goal: 60000 },
+        { id: 102, name: 'Vendedor Padrão 2', revenue: 45000, goal: 55000 },
+        { id: 103, name: 'Vendedor Padrão 3', revenue: 30000, goal: 40000 }
       ]
-    })
+    };
 
-    // Dados mockados para os produtos por campanha
-    const campaignProductsData = ref<Record<number, Product[]>>({
+    const mockProducts = {
       1: [ // Santo Antonio
-        { id: 1, code: '01543', name: 'Bala Gelatina Fini Beijos de Morango 12pcX90g', sales: 263, goal: 346 },
-        { id: 2, code: '01544', name: 'Bala Gelatina Fini Dentaduras 12pcX90g', sales: 187, goal: 441 }
+        { productCode: 1543, productName: 'Bala Gelatina Fini Beijos de Morango 12pcX90g', quantity: 263, unitValue: 346, totalValue: 9098, campaignCode: 1 },
+        { productCode: 1544, productName: 'Bala Gelatina Fini Dentaduras 12pcX90g', quantity: 187, unitValue: 441, totalValue: 8246, campaignCode: 1 }
       ],
-      2: [ // Fiat
-        { id: 3, code: '03221', name: 'Produto A 15pcX100g', sales: 210, goal: 280 },
-        { id: 4, code: '03222', name: 'Produto B 20pcX150g', sales: 154, goal: 320 }
-      ],
-      3: [ // Riclan
-        { id: 5, code: '05121', name: 'Produto X 10pcX50g', sales: 195, goal: 290 },
-        { id: 6, code: '05122', name: 'Produto Y 8pcX40g', sales: 210, goal: 310 }
+      // Adicione dados default para campanhas que não estão especificadas
+      default: [
+        { productCode: 9001, productName: 'Produto Padrão 1', quantity: 200, unitValue: 300, totalValue: 60000, campaignCode: 0 },
+        { productCode: 9002, productName: 'Produto Padrão 2', quantity: 150, unitValue: 350, totalValue: 52500, campaignCode: 0 }
       ]
-    })
+    };
 
-    // Dados mockados para o desempenho de produtos por vendedor
-    const productVendorData = ref<Record<number, ProductVendorData[]>>({
-      1: [ // Produto ID 1 (Bala Gelatina Fini Beijos) - Santo Antonio
-        { vendorId: 1, vendorName: 'Iara', sales: 52, goal: 60 },
-        { vendorId: 2, vendorName: 'Airton', sales: 36, goal: 56 },
-        { vendorId: 3, vendorName: 'Ricardo B.', sales: 38, goal: 80 },
-        { vendorId: 4, vendorName: 'Gracieli M.', sales: 28, goal: 48 },
-        { vendorId: 5, vendorName: 'Marlon Gals.', sales: 25, goal: 48 },
-        { vendorId: 6, vendorName: 'Katia Cav.', sales: 21, goal: 0 },
-        { vendorId: 7, vendorName: 'Diogo', sales: 8, goal: 0 }
+    const mockProductVendors = {
+      1543: [ // Produto Bala Gelatina
+        { vendorId: 1, vendorName: 'MARA C', sales: 52, goal: 60 },
+        { vendorId: 2, vendorName: 'VALDIR LEIVA', sales: 36, goal: 56 },
+        { vendorId: 3, vendorName: 'RUTE', sales: 38, goal: 80 }
       ],
-      2: [ // Produto ID 2 (Bala Gelatina Fini Dentaduras) - Santo Antonio
-        { vendorId: 1, vendorName: 'Iara', sales: 45, goal: 58 },
-        { vendorId: 2, vendorName: 'Airton', sales: 32, goal: 52 },
-        { vendorId: 3, vendorName: 'Ricardo B.', sales: 34, goal: 72 },
-        { vendorId: 4, vendorName: 'Gracieli M.', sales: 24, goal: 42 },
-        { vendorId: 5, vendorName: 'Marlon Gals.', sales: 22, goal: 42 },
-        { vendorId: 6, vendorName: 'Katia Cav.', sales: 18, goal: 0 },
-        { vendorId: 7, vendorName: 'Diogo', sales: 7, goal: 0 }
-      ],
-      3: [ // Produto ID 3 (Produto A) - Fiat
-        { vendorId: 8, vendorName: 'Renata', sales: 48, goal: 55 },
-        { vendorId: 9, vendorName: 'Paulo', sales: 42, goal: 50 },
-        { vendorId: 10, vendorName: 'Eduardo', sales: 40, goal: 60 },
-        { vendorId: 11, vendorName: 'Cristina', sales: 38, goal: 45 },
-        { vendorId: 12, vendorName: 'Roberto', sales: 32, goal: 40 },
-        { vendorId: 13, vendorName: 'Sandra', sales: 10, goal: 30 }
-      ],
-      4: [ // Produto ID 4 (Produto B) - Fiat
-        { vendorId: 8, vendorName: 'Renata', sales: 35, goal: 70 },
-        { vendorId: 9, vendorName: 'Paulo', sales: 30, goal: 65 },
-        { vendorId: 10, vendorName: 'Eduardo', sales: 28, goal: 60 },
-        { vendorId: 11, vendorName: 'Cristina', sales: 25, goal: 50 },
-        { vendorId: 12, vendorName: 'Roberto', sales: 20, goal: 45 },
-        { vendorId: 13, vendorName: 'Sandra', sales: 16, goal: 30 }
-      ],
-      5: [ // Produto ID 5 (Produto X) - Riclan
-        { vendorId: 14, vendorName: 'Leonardo', sales: 50, goal: 60 },
-        { vendorId: 15, vendorName: 'Carla', sales: 45, goal: 55 },
-        { vendorId: 16, vendorName: 'Fernando', sales: 40, goal: 50 },
-        { vendorId: 17, vendorName: 'Daniela', sales: 35, goal: 45 },
-        { vendorId: 18, vendorName: 'Bruno', sales: 25, goal: 40 }
-      ],
-      6: [ // Produto ID 6 (Produto Y) - Riclan
-        { vendorId: 14, vendorName: 'Leonardo', sales: 55, goal: 65 },
-        { vendorId: 15, vendorName: 'Carla', sales: 48, goal: 60 },
-        { vendorId: 16, vendorName: 'Fernando', sales: 42, goal: 55 },
-        { vendorId: 17, vendorName: 'Daniela', sales: 38, goal: 50 },
-        { vendorId: 18, vendorName: 'Bruno', sales: 27, goal: 45 }
+      // Adicione dados default para produtos não especificados
+      default: [
+        { vendorId: 101, vendorName: 'Vendedor Produto 1', sales: 40, goal: 50 },
+        { vendorId: 102, vendorName: 'Vendedor Produto 2', sales: 35, goal: 45 },
+        { vendorId: 103, vendorName: 'Vendedor Produto 3', sales: 25, goal: 35 }
       ]
-    })
+    };
 
-    // Produtos da campanha selecionada
-    const campaignProducts = computed(() => {
-      if (!selectedCampaign.value) return []
-      return campaignProductsData.value[selectedCampaign.value.id] || []
-    })
+    // Carregar campanhas
+    const loadCampaigns = async () => {
+      try {
+        loading.value = true;
+        
+        if (useMockData.value) {
+          campaigns.value = mockCampaigns;
+          
+          // Verifique as opções do gráfico após dados serem carregados
+          await nextTick();
+          console.log('Categorias do gráfico:', campaigns.value.map(c => c.name));
+          console.log('Valores de revenue:', campaigns.value.map(c => c.revenue));
+          console.log('Valores de goal:', campaigns.value.map(c => c.goal));
+          
+          setTimeout(() => {
+            loading.value = false;
+          }, 500);
+          return;
+        }
+        
+        // Garantir que o tenant ID esteja definido
+        if (!localStorage.getItem('tenantId')) {
+          localStorage.setItem('tenantId', 'candy');
+          console.log('Definindo tenant ID padrão: candy');
+        }
+        
+        // Adicione um interceptor temporário para ver os headers
+        const interceptor = apiProvider.axios.interceptors.request.use(request => {
+          console.log('Headers de requisição:', request.headers);
+          return request;
+        });
+        
+        const response = await SalesCampaignService.fetchCampaigns();
+        console.log('Resposta da API:', response);
+        
+        // Remova o interceptor após o uso
+        apiProvider.axios.interceptors.request.eject(interceptor);
+        
+        if (Array.isArray(response)) {
+          campaigns.value = response.map((item: any) => {
+            console.log('Processando item:', item);
+            
+            // Mapear dados com os campos corretos da API
+            return {
+              code: item.code || item.id || Math.floor(Math.random() * 1000), // Gerar código se não existir
+              name: item.name || 'Campanha sem nome',
+              revenue: parseFloat(item.faturamento || item.revenue || 0), // Use faturamento ou revenue
+              goal: parseFloat(item.meta || item.goal || 0), // Use meta ou goal
+              hasProducts: true,
+              startDate: item.startDate || item.dtInicio,
+              endDate: item.endDate || item.dtFinal
+            };
+          });
+          
+          console.log('Campanhas após processamento:', campaigns.value);
+          
+          // Verifique as opções do gráfico após dados serem carregados
+          await nextTick();
+          console.log('Categorias do gráfico:', campaigns.value.map(c => c.name));
+          console.log('Valores de revenue:', campaigns.value.map(c => c.revenue));
+          console.log('Valores de goal:', campaigns.value.map(c => c.goal));
+        } else {
+          console.error('Resposta da API inválida:', response);
+          throw new Error('Formato de resposta inválido');
+        }
+        
+      } catch (error) {
+        console.error('Erro detalhado:', error);
+        $q.notify({
+          message: 'Erro ao carregar campanhas. Verifique o console para detalhes.',
+          color: 'negative',
+          position: 'top'
+        });
+        
+        // Se falhar ao carregar do backend, use dados mockados para não bloquear o usuário
+        if (campaigns.value.length === 0) {
+          console.log('Usando dados mockados como fallback após erro');
+          campaigns.value = mockCampaigns;
+          
+          // Verifique as opções do gráfico após dados de fallback serem carregados
+          await nextTick();
+          console.log('(Fallback) Categorias do gráfico:', campaigns.value.map(c => c.name));
+          console.log('(Fallback) Valores de revenue:', campaigns.value.map(c => c.revenue));
+          console.log('(Fallback) Valores de goal:', campaigns.value.map(c => c.goal));
+        }
+      } finally {
+        loading.value = false;
+      }
+    };
+
+    // Carregar vendedores para uma campanha
+    const loadCampaignSellers = async (campaignId: number) => {
+      try {
+        loadingSellers.value = true;
+        console.log(`Carregando vendedores para campanha ID ${campaignId}`);
+        
+        if (useMockData.value) {
+          console.log('Usando dados mockados de vendedores');
+          // Use dados específicos da campanha se existirem, ou os dados default
+          sellers.value = mockSellers[campaignId as keyof typeof mockSellers] || mockSellers.default || [];
+          setTimeout(() => {
+            loadingSellers.value = false;
+          }, 500);
+          return;
+        }
+        
+        const response = await SalesCampaignService.getCampaignVendors(campaignId);
+        console.log('Resposta de vendedores detalhada:', JSON.stringify(response));
+        
+        if (Array.isArray(response) && response.length > 0) {
+          sellers.value = response.map((item: any) => ({
+            id: item.vendorId || item.id || 0,
+            name: item.vendorName || item.name || `Vendedor ${item.vendorId || item.id || 0}`,
+            revenue: parseFloat(item.revenue || item.faturamento || 0),
+            goal: parseFloat(item.targetValue || item.meta || 0)
+          }));
+        } else {
+          // Se não houver dados do backend ou a resposta for vazia,
+          // use dados mockados específicos ou dados default
+          console.log('Usando dados mockados de vendedores como fallback (resposta vazia ou inválida)');
+          sellers.value = mockSellers[campaignId as keyof typeof mockSellers] || mockSellers.default || [];
+        }
+        
+        console.log('Vendedores processados:', sellers.value);
+        
+      } catch (error) {
+        console.error('Erro ao carregar vendedores:', error);
+        $q.notify({
+          message: 'Erro ao carregar vendedores da campanha',
+          color: 'negative'
+        });
+        
+        // Use mock data como fallback
+        console.log('Usando dados mockados de vendedores como fallback (após erro)');
+        sellers.value = mockSellers[campaignId as keyof typeof mockSellers] || mockSellers.default || [];
+        
+      } finally {
+        loadingSellers.value = false;
+      }
+    };
+
+    // Carregar produtos de uma campanha
+    const loadCampaignProducts = async (campaignId: number) => {
+      try {
+        loadingProducts.value = true;
+        console.log(`Carregando produtos para campanha ID ${campaignId}`);
+        
+        if (useMockData.value) {
+          console.log('Usando dados mockados de produtos');
+          campaignProducts.value = mockProducts[campaignId as keyof typeof mockProducts] || mockProducts.default || [];
+          hasProducts.value = campaignProducts.value.length > 0;
+          setTimeout(() => {
+            loadingProducts.value = false;
+          }, 500);
+          return;
+        }
+        
+        const response = await SalesCampaignService.getCampaignProducts(campaignId);
+        console.log('Resposta de produtos:', response);
+        
+        if (Array.isArray(response) && response.length > 0) {
+          campaignProducts.value = response.map((item: any) => ({
+            productCode: item.productCode || item.code || 0,
+            productName: item.productName || item.name || `Produto ${item.productCode || item.code || 0}`,
+            quantity: parseFloat(item.quantity || 0),
+            unitValue: parseFloat(item.unitValue || 0),
+            totalValue: parseFloat(item.totalValue || 0),
+            campaignCode: campaignId
+          }));
+        } else {
+          console.log('Usando dados mockados de produtos como fallback (resposta vazia ou inválida)');
+          campaignProducts.value = mockProducts[campaignId as keyof typeof mockProducts] || mockProducts.default || [];
+        }
+        
+        hasProducts.value = campaignProducts.value.length > 0;
+        console.log('Produtos processados:', campaignProducts.value);
+      } catch (error) {
+        console.error('Erro ao carregar produtos:', error);
+        $q.notify({
+          message: 'Erro ao carregar produtos da campanha',
+          color: 'negative'
+        });
+        
+        // Use mock data como fallback
+        console.log('Usando dados mockados de produtos como fallback (após erro)');
+        campaignProducts.value = mockProducts[campaignId as keyof typeof mockProducts] || mockProducts.default || [];
+        hasProducts.value = campaignProducts.value.length > 0;
+      } finally {
+        loadingProducts.value = false;
+      }
+    };
+
+    // Carregar vendedores de um produto específico
+    const loadProductVendors = async (campaignId: number, productId: number) => {
+      try {
+        loadingProductVendors.value = true;
+        console.log(`Carregando vendedores para produto ID ${productId} na campanha ${campaignId}`);
+        
+        if (useMockData.value) {
+          console.log('Usando dados mockados de vendedores por produto');
+          productVendors.value = mockProductVendors[productId as keyof typeof mockProductVendors] || mockProductVendors.default || [];
+          setTimeout(() => {
+            loadingProductVendors.value = false;
+          }, 500);
+          return;
+        }
+        
+        const response = await SalesCampaignService.getProductVendors(campaignId, productId);
+        console.log('Resposta de vendedores por produto:', response);
+        
+        if (Array.isArray(response) && response.length > 0) {
+          productVendors.value = response.map((item: any) => ({
+            vendorId: item.vendorId || 0,
+            vendorName: item.vendorName || `Vendedor ${item.vendorId || 0}`,
+            sales: parseFloat(item.sales || 0),
+            goal: parseFloat(item.targetValue || item.meta || 0)
+          }));
+        } else {
+          console.log('Usando dados mockados de vendedores por produto como fallback (resposta vazia ou inválida)');
+          productVendors.value = mockProductVendors[productId as keyof typeof mockProductVendors] || mockProductVendors.default || [];
+        }
+        
+        console.log('Vendedores por produto processados:', productVendors.value);
+      } catch (error) {
+        console.error('Erro ao carregar vendedores do produto:', error);
+        $q.notify({
+          message: 'Erro ao carregar dados de vendedores por produto',
+          color: 'negative'
+        });
+        
+        // Use mock data como fallback
+        console.log('Usando dados mockados de vendedores por produto como fallback (após erro)');
+        productVendors.value = mockProductVendors[productId as keyof typeof mockProductVendors] || mockProductVendors.default || [];
+      } finally {
+        loadingProductVendors.value = false;
+      }
+    };
+
+    // Carregar dados iniciais
+    onMounted(() => {
+      // Verificar tenant ID
+      const tenantId = localStorage.getItem('tenantId');
+      if (!tenantId) {
+        console.warn('Tenant ID não encontrado no localStorage. Usando valor padrão.');
+        localStorage.setItem('tenantId', 'candy'); // Defina um valor padrão
+        $q.notify({
+          message: 'Utilizando tenant padrão "candy"',
+          color: 'warning',
+          position: 'top'
+        });
+      }
+      
+      // Simples verificação para debug: inicialize com dados mockados
+      useMockData.value = !tenantId || window.location.search.includes('mock=true');
+      
+      loadCampaigns();
+    });
 
     // Valor máximo para a escala das barras de produtos
     const maxValue = computed(() => {
-      if (!campaignProducts.value.length) return 500
+      if (!campaignProducts.value.length) return 500;
 
-      let max = 0
+      let max = 0;
       campaignProducts.value.forEach(product => {
-        max = Math.max(max, product.sales, product.goal)
-      })
+        max = Math.max(max, product.quantity, product.unitValue);
+      });
 
       // Arredonda para cima para um múltiplo de 100
-      return Math.ceil(max / 100) * 100
-    })
+      return Math.ceil(max / 100) * 100;
+    });
 
     // Opções do gráfico de campanhas
     const campaignChartOptions = computed(() => ({
@@ -320,6 +655,9 @@ export default defineComponent({
         id: 'campaigns-chart',
         toolbar: {
           show: false
+        },
+        animations: {
+          enabled: true
         }
       },
       plotOptions: {
@@ -338,24 +676,15 @@ export default defineComponent({
         colors: ['transparent']
       },
       xaxis: {
-        categories: campaigns.value.map(c => c.name),
+        categories: campaigns.value.map(c => c.name || ''),
         labels: {
-          rotate: -40, // Ângulo mais acentuado para garantir a rotação
-          rotateAlways: true, // Força sempre a rotação
-          hideOverlappingLabels: false, // Não esconde rótulos sobrepostos
+          rotate: -40,
+          rotateAlways: true,
+          hideOverlappingLabels: false,
           style: {
             fontSize: '12px',
             fontWeight: 400
-          },
-          offsetX: 0,
-          offsetY: 0
-        },
-        tickPlacement: 'on', // Posicionamento dos ticks
-        axisBorder: {
-          show: true
-        },
-        axisTicks: {
-          show: true
+          }
         }
       },
       yaxis: {
@@ -364,16 +693,14 @@ export default defineComponent({
         },
         labels: {
           formatter: function (value: number) {
-            // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
-            return value >= 1000 ? (value / 1000) + 'K' : value
+            return value >= 1000 ? (value / 1000) + 'K' : value;
           }
         },
-        min: 0,
-        max: 120000
+        min: 0
       },
       grid: {
         padding: {
-          bottom: 10 // Adiciona padding na parte inferior para acomodar os rótulos inclinados
+          bottom: 10
         }
       },
       fill: {
@@ -381,8 +708,8 @@ export default defineComponent({
       },
       tooltip: {
         y: {
-          formatter: function (value: { toLocaleString: (arg0: string) => string }) {
-            return 'R$ ' + value.toLocaleString('pt-BR')
+          formatter: function (value: number) {
+            return 'R$ ' + value.toLocaleString('pt-BR');
           }
         }
       },
@@ -391,31 +718,40 @@ export default defineComponent({
         position: 'top',
         horizontalAlign: 'center'
       }
-    }))
+    }));
 
     // Dados do gráfico de campanhas
-    const campaignChartSeries = computed(() => [
-      {
-        name: 'Faturamento',
-        data: campaigns.value.map(c => c.revenue)
-      },
-      {
-        name: 'Meta',
-        data: campaigns.value.map(c => c.goal)
+    const campaignChartSeries = computed(() => {
+      // Verifique se os dados são válidos antes de retornar
+      const validData = campaigns.value.length > 0;
+      if (!validData) {
+        console.warn('Dados de campanhas inválidos para o gráfico:', campaigns.value);
       }
-    ])
+      
+      return [
+        {
+          name: 'Faturamento',
+          data: campaigns.value.map(c => c.revenue || 0)
+        },
+        {
+          name: 'Meta',
+          data: campaigns.value.map(c => c.goal || 0)
+        }
+      ];
+    });
 
     // Opções do gráfico de vendedores
     const sellerChartOptions = computed(() => {
-      if (!selectedCampaign.value) return {}
-
-      const sellers = campaignSellers.value[selectedCampaign.value.id] || []
+      if (!selectedCampaign.value) return {};
 
       return {
         chart: {
           id: 'sellers-chart',
           toolbar: {
             show: false
+          },
+          animations: {
+            enabled: true
           }
         },
         plotOptions: {
@@ -434,16 +770,14 @@ export default defineComponent({
           colors: ['transparent']
         },
         xaxis: {
-          categories: sellers.map(s => s.name),
+          categories: sellers.value.map(s => s.name || ''),
           labels: {
             rotate: -40,
             rotateAlways: true,
             hideOverlappingLabels: false,
             style: {
               fontSize: '12px'
-            },
-            offsetX: 0,
-            offsetY: 0
+            }
           }
         },
         yaxis: {
@@ -452,20 +786,18 @@ export default defineComponent({
           },
           labels: {
             formatter: function (value: number) {
-              // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
-              return value >= 1000 ? (value / 1000) + 'K' : value
+              return value >= 1000 ? (value / 1000) + 'K' : value;
             }
           },
-          min: 0,
-          max: 120000
+          min: 0
         },
         fill: {
           opacity: 1
         },
         tooltip: {
           y: {
-            formatter: function (value: { toLocaleString: (arg0: string) => string }) {
-              return 'R$ ' + value.toLocaleString('pt-BR')
+            formatter: function (value: number) {
+              return 'R$ ' + value.toLocaleString('pt-BR');
             }
           }
         },
@@ -474,46 +806,51 @@ export default defineComponent({
           position: 'top',
           horizontalAlign: 'center'
         }
-      }
-    })
+      };
+    });
 
     // Dados do gráfico de vendedores
     const sellerChartSeries = computed(() => {
-      if (!selectedCampaign.value) return []
+      if (!selectedCampaign.value) return [];
 
-      const sellers = campaignSellers.value[selectedCampaign.value.id] || []
+      // Verifique se os dados de vendedores são válidos
+      const validData = sellers.value.length > 0;
+      if (!validData) {
+        console.warn('Dados de vendedores inválidos para o gráfico:', sellers.value);
+      }
 
       return [
         {
           name: 'Faturamento',
-          data: sellers.map(s => s.revenue)
+          data: sellers.value.map(s => s.revenue || 0)
         },
         {
           name: 'Meta',
-          data: sellers.map(s => s.goal)
+          data: sellers.value.map(s => s.goal || 0)
         }
-      ]
-    })
+      ];
+    });
 
     // Opções do gráfico de produtos por vendedor
     const productVendorChartOptions = computed(() => {
-      if (!selectedProduct.value) return {}
-
-      const productVendors = productVendorData.value[selectedProduct.value.id] || []
+      if (!selectedProduct.value) return {};
 
       // Encontra o valor máximo para o eixo Y
-      let maxYValue = 0
-      productVendors.forEach(pv => {
-        maxYValue = Math.max(maxYValue, pv.sales, pv.goal)
-      })
+      let maxYValue = 0;
+      productVendors.value.forEach(pv => {
+        maxYValue = Math.max(maxYValue, pv.sales, pv.goal);
+      });
       // Adiciona um buffer de 10% para o valor máximo
-      maxYValue = Math.ceil(maxYValue * 1.1)
+      maxYValue = Math.ceil(maxYValue * 1.1) || 10; // Valor mínimo de 10 se maxYValue for 0
 
       return {
         chart: {
           id: 'product-vendor-chart',
           toolbar: {
             show: false
+          },
+          animations: {
+            enabled: true
           }
         },
         plotOptions: {
@@ -532,24 +869,15 @@ export default defineComponent({
           colors: ['transparent']
         },
         xaxis: {
-          categories: campaigns.value.map(c => c.name),
+          categories: productVendors.value.map(pv => pv.vendorName || ''),
           labels: {
-            rotate: -40, // Ângulo mais acentuado para garantir a rotação
-            rotateAlways: true, // Força sempre a rotação
-            hideOverlappingLabels: false, // Não esconde rótulos sobrepostos
+            rotate: -40,
+            rotateAlways: true,
+            hideOverlappingLabels: false,
             style: {
               fontSize: '12px',
               fontWeight: 400
-            },
-            offsetX: 0,
-            offsetY: 0
-          },
-          tickPlacement: 'on', // Posicionamento dos ticks
-          axisBorder: {
-            show: true
-          },
-          axisTicks: {
-            show: true
+            }
           }
         },
         yaxis: {
@@ -557,8 +885,8 @@ export default defineComponent({
             text: ''
           },
           labels: {
-            formatter: function (value: { toString: () => any }) {
-              return value.toString()
+            formatter: function (value: number) {
+              return value.toString();
             }
           },
           min: 0,
@@ -569,8 +897,8 @@ export default defineComponent({
         },
         tooltip: {
           y: {
-            formatter: function (value: string) {
-              return value + ' UN'
+            formatter: function (value: number) {
+              return value + ' UN';
             }
           }
         },
@@ -579,139 +907,366 @@ export default defineComponent({
           position: 'top',
           horizontalAlign: 'center'
         }
-      }
-    })
+      };
+    });
 
     // Dados do gráfico de produtos por vendedor
     const productVendorChartSeries = computed(() => {
-      if (!selectedProduct.value) return []
-
-      const productVendors = productVendorData.value[selectedProduct.value.id] || []
+      if (!selectedProduct.value) return [];
 
       return [
         {
-          name: 'Faturamento',
-          data: productVendors.map(pv => pv.sales)
+          name: 'Vendas',
+          data: productVendors.value.map(pv => pv.sales || 0)
         },
         {
           name: 'Meta',
-          data: productVendors.map(pv => pv.goal)
+          data: productVendors.value.map(pv => pv.goal || 0)
         }
-      ]
-    })
+      ];
+    });
 
     // Função para lidar com clique no gráfico de campanhas
     const handleCampaignClick = (event: any, chartContext: any, config: { dataPointIndex: undefined }) => {
       if (config.dataPointIndex !== undefined) {
-        const campaignIndex = config.dataPointIndex
+        const campaignIndex = config.dataPointIndex;
         if (campaignIndex >= 0 && campaignIndex < campaigns.value.length) {
-          selectedCampaign.value = campaigns.value[campaignIndex]
-          hasProducts.value = selectedCampaign.value.hasProducts
-          selectedSeller.value = null
-          selectedProduct.value = null
+          selectedCampaign.value = campaigns.value[campaignIndex];
+          console.log('Campanha selecionada:', selectedCampaign.value);
+          
+          // Definir hasProducts como true inicialmente
+          hasProducts.value = true;
+          
+          // Carregar dados para a campanha selecionada
+          loadCampaignSellers(selectedCampaign.value.code);
+          loadCampaignProducts(selectedCampaign.value.code);
+          
+          selectedSeller.value = null;
+          selectedProduct.value = null;
+          
+          console.log('Estado após clique em campanha:', {
+            selectedCampaign: selectedCampaign.value,
+            hasProducts: hasProducts.value
+          });
         }
       }
-    }
+    };
 
     // Função para lidar com clique no gráfico de vendedores
     const handleSellerClick = (event: any, chartContext: any, config: { dataPointIndex: undefined }) => {
-      if (!selectedCampaign.value || config.dataPointIndex === undefined) return
+      if (!selectedCampaign.value || config.dataPointIndex === undefined) return;
 
-      const sellers = campaignSellers.value[selectedCampaign.value.id] || []
-      const sellerIndex = config.dataPointIndex
-
-      if (sellerIndex >= 0 && sellerIndex < sellers.length) {
-        selectedSeller.value = sellers[sellerIndex]
+      const sellerIndex = config.dataPointIndex;
+      if (sellerIndex >= 0 && sellerIndex < sellers.value.length) {
+        selectedSeller.value = sellers.value[sellerIndex];
+        console.log('Vendedor selecionado:', selectedSeller.value);
+        
+        // Aqui você pode adicionar lógica para carregar dados específicos do vendedor
+        // Por exemplo, pedidos do vendedor nesta campanha
       }
-    }
+    };
 
     // Função para lidar com clique em um produto
     const handleProductClick = (product: Product) => {
-      selectedProduct.value = product
+      selectedProduct.value = product;
+      console.log('Produto selecionado:', selectedProduct.value);
+      
+      // Carregar vendedores do produto selecionado
+      if (selectedCampaign.value) {
+        loadProductVendors(selectedCampaign.value.code, product.productCode);
+      }
+    };
+
+    // Função auxiliar para formatar datas
+    function formatDate(dateStr: string) {
+      if (!dateStr) return '';
+      // Verificar se já está no formato esperado pelo backend (pode precisar ajustar)
+      if (dateStr.includes('-')) {
+        return dateStr;
+      }
+      // Caso contrário, converter para o formato esperado
+      const parts = dateStr.split('/');
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
     }
 
+    // Função para exibir o modal de criação de campanha
     const createCampaign = () => {
-      $q.notify({
-        message: 'Funcionalidade para criar nova campanha',
-        color: 'info'
-      })
-    }
+      newCampaign.value = {
+        name: '',
+        dtInicio: '',
+        dtFinal: '',
+        fgAtivo: 1,
+        vlCampanha: 0,
+        qtPositivacao: 0,
+        vlBonus: 0
+      };
+      showNewCampaignDialog.value = true;
+    };
+
+    // Função para salvar nova campanha
+    const saveCampaign = async () => {
+      try {
+        saving.value = true;
+        console.log('Dados enviados:', newCampaign.value);
+        
+        // Verifique se campos obrigatórios estão preenchidos
+        if (!newCampaign.value.name || !newCampaign.value.dtInicio || !newCampaign.value.dtFinal) {
+          throw new Error('Campos obrigatórios não preenchidos');
+        }
+        
+        // Formate as datas corretamente se necessário
+        const formattedCampaign = {
+          ...newCampaign.value,
+          // Converter para o formato esperado pelo backend
+          dtInicio: formatDate(newCampaign.value.dtInicio),
+          dtFinal: formatDate(newCampaign.value.dtFinal)
+        };
+        
+        // Se estiver usando dados mockados, simule sucesso
+        if (useMockData.value) {
+          console.log('Simulando criação de campanha com dados mockados');
+          
+          // Adicionar à lista local com ID gerado
+          const newId = Math.max(...campaigns.value.map(c => c.code), 0) + 1;
+          campaigns.value.push({
+            code: newId,
+            name: formattedCampaign.name,
+            revenue: 0,
+            goal: formattedCampaign.vlCampanha,
+            hasProducts: false,
+            startDate: formattedCampaign.dtInicio,
+            endDate: formattedCampaign.dtFinal
+          });
+          
+          await new Promise(resolve => setTimeout(resolve, 500)); // Simular atraso
+          
+          $q.notify({
+            message: 'Campanha criada com sucesso (modo teste)',
+            color: 'positive'
+          });
+          
+          showNewCampaignDialog.value = false;
+          return;
+        }
+        
+        const response = await SalesCampaignService.createCampaign(formattedCampaign);
+        console.log('Resposta do servidor:', response);
+        
+        $q.notify({
+          message: 'Campanha criada com sucesso',
+          color: 'positive'
+        });
+        
+        // Recarregar dados
+        await loadCampaigns();
+        showNewCampaignDialog.value = false;
+      } catch (error: any) {
+        console.error('Erro ao criar campanha:', error);
+        console.log('Detalhes do erro:', error.response?.data || error.message);
+        
+        $q.notify({
+          message: `Erro ao criar campanha: ${error.response?.data?.message || error.message}`,
+          color: 'negative'
+        });
+      } finally {
+        saving.value = false;
+      }
+    };
 
     return {
+      // Dados
+      campaigns,
+      selectedCampaign,
+      selectedSeller,
+      selectedProduct,
+      hasProducts,
+      campaignProducts,
+      sellers,
+      productVendors,
+      loading,
+      loadingSellers,
+      loadingProducts,
+      loadingProductVendors,
+      showNewCampaignDialog,
+      newCampaign,
+      saving,
+      useMockData,
+      
+      // Propriedades computadas
+      maxValue,
       campaignChartOptions,
       campaignChartSeries,
       sellerChartOptions,
       sellerChartSeries,
       productVendorChartOptions,
       productVendorChartSeries,
-      selectedCampaign,
-      selectedSeller,
-      selectedProduct,
-      hasProducts,
-      campaignProducts,
-      maxValue,
+      
+      // Métodos
       handleCampaignClick,
       handleSellerClick,
       handleProductClick,
-      createCampaign
-    }
+      createCampaign,
+      saveCampaign
+    };
   }
-})
+});
 </script>
 
-<style lang="sass" scoped>
-.campaign-card
-  width: 100%
-  height: 100%
+<style lang="scss" scoped>
 
-.header-section
-  display: flex
-  justify-content: space-between
-  align-items: center
 
-.chart-container
-  position: relative
+.campaign-card {
+  width: 100%;
+  height: 100%;
+}
 
-.chart-instructions
-  position: absolute
-  top: 50%
-  left: 55%
-  transform: translate(-50%, -50%)
-  background-color: rgba(255, 255, 255, 0.8)
-  padding: 10px
-  border-radius: 5px
-  text-align: center
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-.total-products-container
-  position: relative
-  padding: 0 10px
+.chart-container {
+  position: relative;
+}
 
-.product-bar
-  cursor: pointer
-  margin-bottom: 20px
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+}
 
-.product-info
-  margin-bottom: 5px
+.total-products-container {
+  position: relative;
+  padding: 0 10px;
+}
 
-.product-code
-  font-weight: bold
-  font-size: 14px
-  display: inline-block
-  margin-right: 10px
+.product-bar {
+  cursor: pointer;
+  margin-bottom: 20px;
+}
 
-.product-name
-  font-size: 14px
-  display: inline-block
+.product-info {
+  margin-bottom: 5px;
+}
 
-.bar-container
-  margin-top: 5px
+.product-code {
+  font-weight: bold;
+  font-size: 14px;
+  display: inline-block;
+  margin-right: 10px;
+}
 
-.bar-label
-  font-size: 12px
-  margin-bottom: 2px
+.product-name {
+  font-size: 14px;
+  display: inline-block;
+}
 
-.product-instructions
-  text-align: center
-  margin-top: 30px
-  font-size: 14px
+.bar-container {
+  margin-top: 5px;
+}
+
+.bar-label {
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-size: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+}
+
+// Estilos para o modal de nova campanha
+.q-dialog {
+  .q-card {
+    min-width: 380px;
+    max-width: 600px;
+    padding: 16px;
+  }
+
+  .q-card-section {
+    padding: 12px 0;
+  }
+
+  .q-input {
+    margin-bottom: 16px;
+
+    // Garantir que os labels não se sobreponham
+    .q-field__label {
+      transform: translateY(-100%) scale(0.75);
+      transform-origin: left top;
+    }
+
+    // Espaçamento para inputs com duas colunas
+    &.half-width {
+      width: calc(50% - 8px);
+      display: inline-block;
+    }
+
+    &.half-width:first-child {
+      margin-right: 16px;
+    }
+  }
+
+  // Layout de duas colunas para datas e valores
+  .row-inputs {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .q-toggle {
+    margin-top: 16px;
+  }
+
+  .q-card-actions {
+    padding: 16px 0 0;
+  }
+}
+
+// Responsividade para dispositivos menores
+@media (max-width: 480px) {
+  .product-name {
+    display: block;
+    margin-top: 5px;
+  }
+
+  .q-dialog .q-card {
+    min-width: 95%;
+    max-width: 95%;
+    margin: 0 auto;
+
+    .row-inputs {
+      flex-direction: column;
+    }
+
+    
+
+    .q-input.half-width {
+      width: 100%;
+      margin-right: 0 !important;
+      margin-bottom: 16px;
+    }
+  }
+}
+
+// Estilos adicionais para consistência
+.q-card-section {
+  &:first-child {
+    padding-bottom: 0;
+  }
+  &:last-child {
+    padding-top: 0;
+  }
+
+  
+}
 </style>

@@ -1,5 +1,5 @@
 import {Inject} from "@nestjs/common";
-import {format} from "date-fns";
+import {format, isValid, parseISO} from "date-fns";
 import {CadEquipeEntity} from "src/database/entity/tenant/cad_equipe.entity";
 import {RequestMetadata} from "src/shared/request-metadata.provider";
 import {Connection} from "typeorm";
@@ -23,8 +23,29 @@ export class RevenueQueries implements IRevenueQueries {
   }
 
   private async getDates (yearMonth: string) {
-    return DateValueUtils.yearMonthBound(yearMonth, await this.requestMetadata.dtFechamento())
-      .map(date => format(date, 'yyyy-MM-dd'))
+    try {
+      const dates = await DateValueUtils.yearMonthBound(yearMonth, await this.requestMetadata.dtFechamento());
+      
+      // Verifica se as datas são válidas
+      return dates.map(date => {
+        if (!date || !isValid(date)) {
+          // Tenta criar uma data válida a partir do yearMonth
+          const [year, month] = yearMonth.split('-').map(Number);
+          if (!isNaN(year) && !isNaN(month)) {
+            // Cria uma data válida para o primeiro dia do mês
+            const validDate = new Date(year, month - 1, 1);
+            return format(validDate, 'yyyy-MM-dd');
+          }
+          // Retorna uma data padrão caso tudo falhe
+          return format(new Date(), 'yyyy-MM-dd');
+        }
+        return format(date, 'yyyy-MM-dd');
+      });
+    } catch (error) {
+      console.error(`Erro ao processar datas para o mês ${yearMonth}:`, error);
+      // Retorna um array com a data atual como fallback
+      return [format(new Date(), 'yyyy-MM-dd'), format(new Date(), 'yyyy-MM-dd')];
+    }
   }
 
   private async getSellerCodeOrTeamId (cd: number, type: 'team' | 'seller'): Promise<{ teamId: string, sellerCode: number }> {

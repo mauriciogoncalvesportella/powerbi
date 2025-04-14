@@ -1,3 +1,4 @@
+// src/database/entity/tenant/cad_campanha.entity.ts
 import {IsInt, IsISO8601, IsNumber, IsOptional, IsString} from "class-validator";
 import {Column, Entity, Index, JoinColumn, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn} from "typeorm";
 import {CadFabricaEntity} from './cad_fabrica.entity'
@@ -12,9 +13,10 @@ export class CadCampanhaEntity {
   @IsString()
   nmCampanha: string
 
-//  @ManyToOne(() => CadFabricaEntity, cadFabricaEntity => cadFabricaEntity.cd)
-//  @JoinColumn({ name: 'cdFabrica' })
-//  cadFabrica: CadFabricaEntity
+  // @ManyToOne(() => CadFabricaEntity, cadFabricaEntity => cadFabricaEntity.cd)
+  // @JoinColumn({ name: 'cdFabrica' })
+  // cadFabrica: CadFabricaEntity
+
   @Column('int', { nullable: true })
   @Index('IDX_CADCAMPANHA_CDFABRICA')
   @IsOptional()
@@ -44,4 +46,30 @@ export class CadCampanhaEntity {
   @Column('numeric', { precision: 10, scale: 2 })
   @IsNumber()
   vlBonus: number
+
+  // Getters para compatibilidade com o serviço
+  get dtFim(): string {
+    return this.dtFinal;
+  }
+
+  get fgSituacao(): number {
+    return this.fgAtivo;
+  }
+  
+  // Opcional: Adicionar getter para vlMeta e vlRealizado se necessário
+  get vlMeta(): number {
+    return this.vlCampanha;
+  }
+
+  get vlRealizado(): number {
+    // Você pode implementar uma lógica para calcular o valor realizado
+    // Por ora, retornando um valor fixo ou null
+    return null;
+  }
+
+  // Opcional: Se você precisar do campo cdVendedor mencionado no serviço
+  @Column('int', { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  cdVendedor: number;
 }

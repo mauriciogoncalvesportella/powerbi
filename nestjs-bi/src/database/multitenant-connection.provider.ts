@@ -1,4 +1,4 @@
-import { InternalServerErrorException, Provider, Scope, UnauthorizedException } from '@nestjs/common';
+import { InternalServerErrorException, Logger, Provider, Scope, UnauthorizedException } from '@nestjs/common';
 import {REQUEST} from '@nestjs/core';
 import {JwtService} from '@nestjs/jwt';
 import {Request} from 'express';
@@ -32,7 +32,7 @@ export default {
       }
     }
 
-    const connection = await dbService.getConnection(connectionId)
+    const connection = await dbService.getConnection(connectionId)    
     return new MultitenantConnection(connection)
   },
   inject: [REQUEST, JwtService, DatabaseService]

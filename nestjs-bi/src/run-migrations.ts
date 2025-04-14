@@ -28,13 +28,9 @@ const runMigrationTenant = async (schema: string, publicEntityManager: EntityMan
 
     if (await connTenant.showMigrations()) {
       await connTenant.runMigrations()
-      console.log(schema,'updated')
       return
     }
-
-    console.log(schema, 'continue')
   } catch (err: any) {
-    console.log(schema, err.message)
     const cadMigrationLog: CadMigrationLog = logRepository.create({
       id: schema,
       errorId: err.code,

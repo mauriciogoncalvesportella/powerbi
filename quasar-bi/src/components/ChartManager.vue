@@ -47,7 +47,7 @@ interface ChartState {
 class Props {
   startComponent!: string;
   loading!: boolean;
-  disableChart!: boolean;
+  disableChart?: boolean;
   flex: boolean = false;
   startProps!: any
 }

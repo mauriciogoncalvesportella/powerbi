@@ -151,15 +151,6 @@ export default defineComponent({
       if (!props.loading) {
         const { sortBy, descending } = params.pagination
 
-        // if (sortBy.startsWith('month')) {
-        //   const [, index] = sortBy.split('_')
-        //   sortByColumn.value = yearMonthIds[parseInt(index)]
-        //   console.log(yearMonthArr.value, sortByColumn.value)
-        //   pagination.value.sortBy = sortBy
-        // } else {
-        //   sortByColumn.value = sortBy ?? 'customer_name'
-        //   pagination.value.sortBy = sortByColumn.value
-        // }
         sortByColumn.value = sortBy ?? 'customer_name'
         sortDescending.value = sortBy ? descending : false
         pagination.value.descending = sortDescending.value

@@ -25,4 +25,5 @@ export class CadCampanhaProdutoEntity {
 
   @Column('numeric', { precision: 10, scale: 2 })
   vlTotal: number
+  produto: any;
 }

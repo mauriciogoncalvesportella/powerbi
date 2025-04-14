@@ -87,7 +87,6 @@ export default defineComponent({
     const ProfitDailyBarsRef: Ref<any> = ref(null)
 
     const update = (status: string) => {
-      console.log('UPDATE!!')
       nextTick(() => {
         if (status === 'loaded') {
           ProfitDailyBarsRef.value?.newState({

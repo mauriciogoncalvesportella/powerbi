@@ -1,9 +1,12 @@
-import { Module } from "@nestjs/common";
-import { CampaignTypeOrmService } from "../campaign/campaign.typeorm.service";
-import { CampaignController } from "../campaign/campaign.controller";
+import { Module } from '@nestjs/common';
+import { CampaignController } from './campaign.controller';
+import { CampaignTypeOrmService } from './campaign.typeorm.service';
+import { DatabaseModule } from 'src/database/database.module';
 
 @Module({
+  imports: [DatabaseModule],
   controllers: [CampaignController],
-  providers: [CampaignTypeOrmService]
+  providers: [CampaignTypeOrmService],
+  exports: [CampaignTypeOrmService]
 })
 export class CampaignModule {}
