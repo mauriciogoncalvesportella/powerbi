@@ -174,7 +174,7 @@
         label="Nome da Campanha" 
         outlined
         dense
-        :rules="[val => !!val || 'Nome é obrigatório']" 
+        :rules="[(val: any) => !!val || 'Nome é obrigatório']" 
       />
       
       <div class="row q-col-gutter-md">
@@ -185,7 +185,7 @@
             label="Data Início" 
             outlined
             dense
-            :rules="[val => !!val || 'Data é obrigatória']" 
+            :rules="[(val: any) => !!val || 'Data é obrigatória']" 
           />
         </div>
         <div class="col-6">
@@ -195,7 +195,7 @@
             label="Data Final" 
             outlined
             dense
-            :rules="[val => !!val || 'Data é obrigatória']" 
+            :rules="[(val: any) => !!val || 'Data é obrigatória']" 
           />
         </div>
       </div>
@@ -389,9 +389,6 @@ export default defineComponent({
           
           // Verifique as opções do gráfico após dados serem carregados
           await nextTick();
-          console.log('Categorias do gráfico:', campaigns.value.map(c => c.name));
-          console.log('Valores de revenue:', campaigns.value.map(c => c.revenue));
-          console.log('Valores de goal:', campaigns.value.map(c => c.goal));
           
           setTimeout(() => {
             loading.value = false;
@@ -402,24 +399,20 @@ export default defineComponent({
         // Garantir que o tenant ID esteja definido
         if (!localStorage.getItem('tenantId')) {
           localStorage.setItem('tenantId', 'candy');
-          console.log('Definindo tenant ID padrão: candy');
         }
         
         // Adicione um interceptor temporário para ver os headers
         const interceptor = apiProvider.axios.interceptors.request.use(request => {
-          console.log('Headers de requisição:', request.headers);
           return request;
         });
         
         const response = await SalesCampaignService.fetchCampaigns();
-        console.log('Resposta da API:', response);
         
         // Remova o interceptor após o uso
         apiProvider.axios.interceptors.request.eject(interceptor);
         
         if (Array.isArray(response)) {
           campaigns.value = response.map((item: any) => {
-            console.log('Processando item:', item);
             
             // Mapear dados com os campos corretos da API
             return {
@@ -433,13 +426,8 @@ export default defineComponent({
             };
           });
           
-          console.log('Campanhas após processamento:', campaigns.value);
-          
           // Verifique as opções do gráfico após dados serem carregados
           await nextTick();
-          console.log('Categorias do gráfico:', campaigns.value.map(c => c.name));
-          console.log('Valores de revenue:', campaigns.value.map(c => c.revenue));
-          console.log('Valores de goal:', campaigns.value.map(c => c.goal));
         } else {
           console.error('Resposta da API inválida:', response);
           throw new Error('Formato de resposta inválido');
@@ -455,14 +443,10 @@ export default defineComponent({
         
         // Se falhar ao carregar do backend, use dados mockados para não bloquear o usuário
         if (campaigns.value.length === 0) {
-          console.log('Usando dados mockados como fallback após erro');
           campaigns.value = mockCampaigns;
           
           // Verifique as opções do gráfico após dados de fallback serem carregados
           await nextTick();
-          console.log('(Fallback) Categorias do gráfico:', campaigns.value.map(c => c.name));
-          console.log('(Fallback) Valores de revenue:', campaigns.value.map(c => c.revenue));
-          console.log('(Fallback) Valores de goal:', campaigns.value.map(c => c.goal));
         }
       } finally {
         loading.value = false;
@@ -473,10 +457,8 @@ export default defineComponent({
     const loadCampaignSellers = async (campaignId: number) => {
       try {
         loadingSellers.value = true;
-        console.log(`Carregando vendedores para campanha ID ${campaignId}`);
         
         if (useMockData.value) {
-          console.log('Usando dados mockados de vendedores');
           // Use dados específicos da campanha se existirem, ou os dados default
           sellers.value = mockSellers[campaignId as keyof typeof mockSellers] || mockSellers.default || [];
           setTimeout(() => {
@@ -486,7 +468,6 @@ export default defineComponent({
         }
         
         const response = await SalesCampaignService.getCampaignVendors(campaignId);
-        console.log('Resposta de vendedores detalhada:', JSON.stringify(response));
         
         if (Array.isArray(response) && response.length > 0) {
           sellers.value = response.map((item: any) => ({
@@ -498,11 +479,8 @@ export default defineComponent({
         } else {
           // Se não houver dados do backend ou a resposta for vazia,
           // use dados mockados específicos ou dados default
-          console.log('Usando dados mockados de vendedores como fallback (resposta vazia ou inválida)');
           sellers.value = mockSellers[campaignId as keyof typeof mockSellers] || mockSellers.default || [];
         }
-        
-        console.log('Vendedores processados:', sellers.value);
         
       } catch (error) {
         console.error('Erro ao carregar vendedores:', error);
@@ -512,7 +490,6 @@ export default defineComponent({
         });
         
         // Use mock data como fallback
-        console.log('Usando dados mockados de vendedores como fallback (após erro)');
         sellers.value = mockSellers[campaignId as keyof typeof mockSellers] || mockSellers.default || [];
         
       } finally {
@@ -524,10 +501,8 @@ export default defineComponent({
     const loadCampaignProducts = async (campaignId: number) => {
       try {
         loadingProducts.value = true;
-        console.log(`Carregando produtos para campanha ID ${campaignId}`);
         
         if (useMockData.value) {
-          console.log('Usando dados mockados de produtos');
           campaignProducts.value = mockProducts[campaignId as keyof typeof mockProducts] || mockProducts.default || [];
           hasProducts.value = campaignProducts.value.length > 0;
           setTimeout(() => {
@@ -537,7 +512,6 @@ export default defineComponent({
         }
         
         const response = await SalesCampaignService.getCampaignProducts(campaignId);
-        console.log('Resposta de produtos:', response);
         
         if (Array.isArray(response) && response.length > 0) {
           campaignProducts.value = response.map((item: any) => ({
@@ -549,12 +523,10 @@ export default defineComponent({
             campaignCode: campaignId
           }));
         } else {
-          console.log('Usando dados mockados de produtos como fallback (resposta vazia ou inválida)');
           campaignProducts.value = mockProducts[campaignId as keyof typeof mockProducts] || mockProducts.default || [];
         }
         
         hasProducts.value = campaignProducts.value.length > 0;
-        console.log('Produtos processados:', campaignProducts.value);
       } catch (error) {
         console.error('Erro ao carregar produtos:', error);
         $q.notify({
@@ -563,7 +535,6 @@ export default defineComponent({
         });
         
         // Use mock data como fallback
-        console.log('Usando dados mockados de produtos como fallback (após erro)');
         campaignProducts.value = mockProducts[campaignId as keyof typeof mockProducts] || mockProducts.default || [];
         hasProducts.value = campaignProducts.value.length > 0;
       } finally {
@@ -575,10 +546,8 @@ export default defineComponent({
     const loadProductVendors = async (campaignId: number, productId: number) => {
       try {
         loadingProductVendors.value = true;
-        console.log(`Carregando vendedores para produto ID ${productId} na campanha ${campaignId}`);
         
         if (useMockData.value) {
-          console.log('Usando dados mockados de vendedores por produto');
           productVendors.value = mockProductVendors[productId as keyof typeof mockProductVendors] || mockProductVendors.default || [];
           setTimeout(() => {
             loadingProductVendors.value = false;
@@ -587,8 +556,6 @@ export default defineComponent({
         }
         
         const response = await SalesCampaignService.getProductVendors(campaignId, productId);
-        console.log('Resposta de vendedores por produto:', response);
-        
         if (Array.isArray(response) && response.length > 0) {
           productVendors.value = response.map((item: any) => ({
             vendorId: item.vendorId || 0,
@@ -597,11 +564,9 @@ export default defineComponent({
             goal: parseFloat(item.targetValue || item.meta || 0)
           }));
         } else {
-          console.log('Usando dados mockados de vendedores por produto como fallback (resposta vazia ou inválida)');
           productVendors.value = mockProductVendors[productId as keyof typeof mockProductVendors] || mockProductVendors.default || [];
         }
         
-        console.log('Vendedores por produto processados:', productVendors.value);
       } catch (error) {
         console.error('Erro ao carregar vendedores do produto:', error);
         $q.notify({
@@ -610,7 +575,6 @@ export default defineComponent({
         });
         
         // Use mock data como fallback
-        console.log('Usando dados mockados de vendedores por produto como fallback (após erro)');
         productVendors.value = mockProductVendors[productId as keyof typeof mockProductVendors] || mockProductVendors.default || [];
       } finally {
         loadingProductVendors.value = false;
@@ -933,7 +897,6 @@ export default defineComponent({
         const campaignIndex = config.dataPointIndex;
         if (campaignIndex >= 0 && campaignIndex < campaigns.value.length) {
           selectedCampaign.value = campaigns.value[campaignIndex];
-          console.log('Campanha selecionada:', selectedCampaign.value);
           
           // Definir hasProducts como true inicialmente
           hasProducts.value = true;
@@ -945,10 +908,7 @@ export default defineComponent({
           selectedSeller.value = null;
           selectedProduct.value = null;
           
-          console.log('Estado após clique em campanha:', {
-            selectedCampaign: selectedCampaign.value,
-            hasProducts: hasProducts.value
-          });
+          
         }
       }
     };
@@ -960,7 +920,6 @@ export default defineComponent({
       const sellerIndex = config.dataPointIndex;
       if (sellerIndex >= 0 && sellerIndex < sellers.value.length) {
         selectedSeller.value = sellers.value[sellerIndex];
-        console.log('Vendedor selecionado:', selectedSeller.value);
         
         // Aqui você pode adicionar lógica para carregar dados específicos do vendedor
         // Por exemplo, pedidos do vendedor nesta campanha
@@ -970,7 +929,6 @@ export default defineComponent({
     // Função para lidar com clique em um produto
     const handleProductClick = (product: Product) => {
       selectedProduct.value = product;
-      console.log('Produto selecionado:', selectedProduct.value);
       
       // Carregar vendedores do produto selecionado
       if (selectedCampaign.value) {
@@ -1008,7 +966,6 @@ export default defineComponent({
     const saveCampaign = async () => {
       try {
         saving.value = true;
-        console.log('Dados enviados:', newCampaign.value);
         
         // Verifique se campos obrigatórios estão preenchidos
         if (!newCampaign.value.name || !newCampaign.value.dtInicio || !newCampaign.value.dtFinal) {
@@ -1025,7 +982,6 @@ export default defineComponent({
         
         // Se estiver usando dados mockados, simule sucesso
         if (useMockData.value) {
-          console.log('Simulando criação de campanha com dados mockados');
           
           // Adicionar à lista local com ID gerado
           const newId = Math.max(...campaigns.value.map(c => c.code), 0) + 1;
@@ -1051,7 +1007,6 @@ export default defineComponent({
         }
         
         const response = await SalesCampaignService.createCampaign(formattedCampaign);
-        console.log('Resposta do servidor:', response);
         
         $q.notify({
           message: 'Campanha criada com sucesso',
@@ -1063,7 +1018,6 @@ export default defineComponent({
         showNewCampaignDialog.value = false;
       } catch (error: any) {
         console.error('Erro ao criar campanha:', error);
-        console.log('Detalhes do erro:', error.response?.data || error.message);
         
         $q.notify({
           message: `Erro ao criar campanha: ${error.response?.data?.message || error.message}`,

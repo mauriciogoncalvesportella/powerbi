@@ -1,5 +1,8 @@
+// nestjs-bi/src/database/entity/tenant/vd_pedido.entity.ts
 import { IsInt, IsISO8601, IsNumber, IsOptional, IsString } from "class-validator";
-import { Column, Entity, Index, PrimaryColumn } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryColumn } from "typeorm";
+import { CadVendedorEntity } from "./cad_vendedor.entity";
+import { VdPedidoProdutoEntity } from "./vd_pedido_produto.entity";
 
 @Entity('vd_pedidos')
 export class VdPedidoEntity {
@@ -29,28 +32,16 @@ export class VdPedidoEntity {
   @IsInt()
   fgLiberado: number
 
-  // @ManyToOne(() => CadTipoPedidoEntity, cadTipoPedidoEntity => cadTipoPedidoEntity.cd)
-  // @JoinTable({ name: 'cdTipoPedido' })
-  // @Index()
-  // cadTipoPedido: CadTipoPedidoEntity
   @Column('int')
   @Index('IDX_VDPEDIDOS_CDTIPOPEDIDO')
   @IsInt()
   cdTipoPedido: number
 
-  // @ManyToOne(() => CadEmpresaEntity, cadEmpresaEntity => cadEmpresaEntity.cd)
-  // @JoinTable({ name: 'cdEmpresa' })
-  // @Index()
-  // cadEmpresa: CadEmpresaEntity
   @Column('int')
   @Index('IDX_VDPEDIDOS_CDEMPRESA')
   @IsInt()
   cdEmpresa: number
 
-  // @ManyToOne(() => CadVendedorEntity, cadVendedorEntity => cadVendedorEntity.cd)
-  // @JoinTable({ name: 'cdVendedor' })
-  // @Index()
-  // cadVendedor: CadVendedorEntity
   @Column('int')
   @Index('IDX_VDPEDIDOS_CDVENDEDOR')
   @IsInt()
@@ -61,19 +52,11 @@ export class VdPedidoEntity {
   @IsOptional()
   cdVendedor2: number
 
-  // @ManyToOne(() => CadClienteEntity, cadClienteEntity => cadClienteEntity.cd)
-  // @JoinTable({ name: 'cdCliente' })
-  // @Index()
-  // cadCliente: CadClienteEntity
   @Column('int')
   @Index('IDX_VDPEDIDOS_CDCLIENTE')
   @IsInt()
   cdCliente: number
 
-  // @ManyToOne(() => CadCondicaoPagamentoEntity, CadCondicaoPagamento => CadCondicaoPagamento.cd)
-  // @JoinTable({ name: 'cdCondicaoPagamento' })
-  // @Index()
-  // cadCondicaoPagamento: CadCondicaoPagamentoEntity
   @Column('int', { nullable: true })
   @Index('IDX_VDPEDIDOS_CDCONDICAOPAGAMENTO')
   @IsInt()
@@ -145,4 +128,12 @@ export class VdPedidoEntity {
   @Column('numeric', { precision: 10, scale: 2 })
   @IsNumber()
   vlLucro: number
+
+  // Adicionar relacionamentos - estes podem ser comentados se causarem problemas
+  @ManyToOne(() => CadVendedorEntity)
+  @JoinColumn({ name: 'cdVendedor' })
+  vendedor: CadVendedorEntity;
+
+  @OneToMany(() => VdPedidoProdutoEntity, pedidoProduto => pedidoProduto.cdPedido)
+  pedidosProdutos: VdPedidoProdutoEntity[];
 }

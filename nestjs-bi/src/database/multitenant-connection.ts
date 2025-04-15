@@ -1,6 +1,9 @@
 import { Connection, ObjectLiteral } from "typeorm";
 
 export class MultitenantConnection {
+  getManager(): import("typeorm").EntityManager {
+    throw new Error('Method not implemented.');
+  }
   constructor (
     public connection: Connection
   ) { }

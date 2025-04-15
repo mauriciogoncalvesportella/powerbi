@@ -1,3 +1,4 @@
+// src/bi/campaign/campaign.module.ts
 import { Module } from '@nestjs/common';
 import { CampaignController } from './campaign.controller';
 import { CampaignTypeOrmService } from './campaign.typeorm.service';

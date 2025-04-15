@@ -1,7 +1,7 @@
-// src/database/entity/tenant/cad_campanha.entity.ts
 import {IsInt, IsISO8601, IsNumber, IsOptional, IsString} from "class-validator";
 import {Column, Entity, Index, JoinColumn, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn} from "typeorm";
 import {CadFabricaEntity} from './cad_fabrica.entity'
+import {CadVendedorEntity} from './cad_vendedor.entity'
 
 @Entity('cad_campanha')
 export class CadCampanhaEntity {
@@ -13,9 +13,10 @@ export class CadCampanhaEntity {
   @IsString()
   nmCampanha: string
 
-  // @ManyToOne(() => CadFabricaEntity, cadFabricaEntity => cadFabricaEntity.cd)
-  // @JoinColumn({ name: 'cdFabrica' })
-  // cadFabrica: CadFabricaEntity
+  @Column('int', { name: 'cdvendedor', nullable: true })
+  @IsOptional()
+  @IsNumber()
+  cdVendedor: number
 
   @Column('int', { nullable: true })
   @Index('IDX_CADCAMPANHA_CDFABRICA')
@@ -55,7 +56,7 @@ export class CadCampanhaEntity {
   get fgSituacao(): number {
     return this.fgAtivo;
   }
-  
+
   // Opcional: Adicionar getter para vlMeta e vlRealizado se necessário
   get vlMeta(): number {
     return this.vlCampanha;
@@ -67,9 +68,13 @@ export class CadCampanhaEntity {
     return null;
   }
 
-  // Opcional: Se você precisar do campo cdVendedor mencionado no serviço
-  @Column('int', { nullable: true })
-  @IsOptional()
-  @IsNumber()
-  cdVendedor: number;
+  // Relacionamento com fabricante
+  @ManyToOne(() => CadFabricaEntity)
+  @JoinColumn({ name: 'cdFabrica' })
+  fabrica: CadFabricaEntity;
+
+  // Relacionamento com vendedor
+  @ManyToOne(() => CadVendedorEntity)
+  @JoinColumn({ name: 'cdvendedor' })
+  vendedor: CadVendedorEntity;
 }

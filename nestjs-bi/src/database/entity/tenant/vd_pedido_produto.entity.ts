@@ -1,5 +1,8 @@
+// nestjs-bi/src/database/entity/tenant/vd_pedido_produto.entity.ts
 import {IsInt, IsNumber, IsOptional, IsString} from "class-validator";
-import {Column, Entity, Index, PrimaryColumn } from "typeorm";
+import {Column, Entity, Index, JoinColumn, ManyToOne, PrimaryColumn } from "typeorm";
+import {CadProdutoEntity} from "./cad_produto.entity";
+import {VdPedidoEntity} from "./vd_pedido.entity";
 
 @Entity('vd_pedido_produto')
 export class VdPedidoProdutoEntity {
@@ -12,34 +15,22 @@ export class VdPedidoProdutoEntity {
   @IsString()
   idMesAno: string
 
-  //@ManyToOne(() => VdPedidoProdutoEntity, vdPedidoProduto => vdPedidoProduto.cd)
-  //@JoinColumn({ name: 'cdPedidoProduto' })
-  //cadPedidoProduto: VdPedidoProdutoEntity
   @PrimaryColumn('int')
   @Index('IDX_VDPEDIDOPRODUTO_CDPEDIDO')
   @IsInt()
   cdPedido: number
 
-  //@ManyToOne(() => CadProdutoEntity, cadProdutoEntity => cadProdutoEntity.cd)
-  //@JoinColumn({ name: 'cdProduto' })
-  //cdProduto: number
   @Column('int')
   @Index('IDX_VDPEDIDOPRODUTO_CDPRODUTO')
   @IsInt()
   cdProduto: number
 
-  //@ManyToOne(() => CadTabelaPrecoEntity, cadTabelaPreco => cadTabelaPreco.cd)
-  //@JoinColumn({ name: 'cdTabelaPreco' })  
-  //cadTabelaPreco: CadTabelaPrecoEntity
   @Column('int', { nullable: true })
   @Index('IDX_VDPEDIDOPRODUTO_CDTABELAPRECO')
   @IsInt()
   @IsOptional()
   cdTabelaPreco: number
 
-  //@ManyToOne(() => CadSubtabelaEntity, cadSubtabela => cadSubtabela.cd)
-  //@JoinColumn({ name: 'cdSubtabela' })  
-  //cadSubtabela: CadSubtabelaEntity
   @Column('int', { nullable: true })
   @Index('IDX_VDPEDIDOPRODUTO_CDSUBTABELA')
   @IsInt()
@@ -95,4 +86,13 @@ export class VdPedidoProdutoEntity {
   @Column('smallint')
   @IsNumber()
   fgSituacao: number
+
+  // Adicionar relacionamentos - estes podem ser comentados se causarem problemas
+  @ManyToOne(() => VdPedidoEntity, pedido => pedido.pedidosProdutos)
+  @JoinColumn({ name: 'cdPedido' })
+  pedido: VdPedidoEntity;
+
+  @ManyToOne(() => CadProdutoEntity)
+  @JoinColumn({ name: 'cdProduto' })
+  produto: CadProdutoEntity;
 }
