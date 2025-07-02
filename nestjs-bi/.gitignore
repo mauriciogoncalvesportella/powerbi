@@ -2,6 +2,9 @@ node_modules
 /db-data
 /dist
 /bases
+/BD_BI
+.env
+.env.local
 
 # Log files
 npm-debug.log*

@@ -129,11 +129,16 @@ export class VdPedidoEntity {
   @IsNumber()
   vlLucro: number
 
-  // Adicionar relacionamentos - estes podem ser comentados se causarem problemas
+  // Adicionar relacionamentos
   @ManyToOne(() => CadVendedorEntity)
   @JoinColumn({ name: 'cdVendedor' })
   vendedor: CadVendedorEntity;
 
   @OneToMany(() => VdPedidoProdutoEntity, pedidoProduto => pedidoProduto.cdPedido)
   pedidosProdutos: VdPedidoProdutoEntity[];
+
+  // Getter para calcular o valor total do pedido
+  get vlTotal(): number {
+    return (this.vlProdutos || 0) - (this.vlDesconto || 0) + (this.vlIcmsst || 0) + (this.vlIpi || 0);
+  }
 }

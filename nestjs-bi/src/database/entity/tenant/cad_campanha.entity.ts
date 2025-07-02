@@ -1,80 +1,58 @@
-import {IsInt, IsISO8601, IsNumber, IsOptional, IsString} from "class-validator";
-import {Column, Entity, Index, JoinColumn, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn} from "typeorm";
-import {CadFabricaEntity} from './cad_fabrica.entity'
-import {CadVendedorEntity} from './cad_vendedor.entity'
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 @Entity('cad_campanha')
 export class CadCampanhaEntity {
-  @PrimaryColumn('int')
-  @IsInt()
-  cd: number
+  @PrimaryGeneratedColumn()
+  cd: number;
 
-  @Column({ length: 50 })
-  @IsString()
-  nmCampanha: string
+  @Column({ name: 'nmCampanha', length: 255 })
+  nmCampanha: string;
 
-  @Column('int', { name: 'cdvendedor', nullable: true })
-  @IsOptional()
-  @IsNumber()
-  cdVendedor: number
+  @Column({ name: 'vlCampanha', type: 'decimal', precision: 15, scale: 2, default: 0 })
+  vlCampanha: number;
 
-  @Column('int', { nullable: true })
-  @Index('IDX_CADCAMPANHA_CDFABRICA')
-  @IsOptional()
-  @IsNumber()
-  cdFabrica: number
+  @Column({ name: 'cdvendedor', nullable: true })
+  cdvendedor: number;
 
-  @Column('timestamp without time zone')
-  @IsISO8601()
-  dtInicio: string
+  @Column({ name: 'fgAtivo', default: 1 })
+  fgAtivo: number;
 
-  @Column('timestamp without time zone')
-  @IsISO8601()
-  dtFinal: string
+  @Column({ name: 'dtInicio', type: 'date', nullable: true })
+  dtInicio: Date;
 
-  @Column('smallint')
-  @IsInt()
-  fgAtivo: number
+  @Column({ name: 'dtFinal', type: 'date', nullable: true })
+  dtFinal: Date;
 
-  @Column('numeric', { precision: 10, scale: 2 })
-  @IsNumber()
-  vlCampanha: number
+  @Column({ name: 'qtDiasRef', default: 0 })
+  qtDiasRef: number;
 
-  @Column('smallint')
-  @IsInt()
-  qtPositivacao: number
+  @Column({ name: 'vlPercRef', type: 'decimal', precision: 10, scale: 2, default: 0 })
+  vlPercRef: number;
 
-  @Column('numeric', { precision: 10, scale: 2 })
-  @IsNumber()
-  vlBonus: number
+  // Campo adicionado para compatibilidade com import-data
+  @Column({ name: 'cdFabrica', nullable: true })
+  cdFabrica: number;
 
-  // Getters para compatibilidade com o serviço
-  get dtFim(): string {
-    return this.dtFinal;
-  }
+  // Campos adicionais que podem existir na sua tabela
+  @Column({ name: 'dsCampanha', length: 500, nullable: true })
+  dsCampanha: string;
 
-  get fgSituacao(): number {
-    return this.fgAtivo;
-  }
+  @Column({ name: 'dtCriacao', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  dtCriacao: Date;
 
-  // Opcional: Adicionar getter para vlMeta e vlRealizado se necessário
-  get vlMeta(): number {
-    return this.vlCampanha;
-  }
+  @Column({ name: 'dtAlteracao', type: 'timestamp', nullable: true })
+  dtAlteracao: Date;
 
-  get vlRealizado(): number {
-    // Você pode implementar uma lógica para calcular o valor realizado
-    // Por ora, retornando um valor fixo ou null
-    return null;
-  }
+  @Column({ name: 'cdUsuarioCriacao', nullable: true })
+  cdUsuarioCriacao: number;
 
-  // Relacionamento com fabricante
-  @ManyToOne(() => CadFabricaEntity)
-  @JoinColumn({ name: 'cdFabrica' })
-  fabrica: CadFabricaEntity;
+  @Column({ name: 'cdUsuarioAlteracao', nullable: true })
+  cdUsuarioAlteracao: number;
 
-  // Relacionamento com vendedor
-  @ManyToOne(() => CadVendedorEntity)
-  @JoinColumn({ name: 'cdvendedor' })
-  vendedor: CadVendedorEntity;
+  // Campos para bonus e positivação se existirem
+  @Column({ name: 'qtPositivacao', default: 0 })
+  qtPositivacao: number;
+
+  @Column({ name: 'vlBonus', type: 'decimal', precision: 15, scale: 2, default: 0 })
+  vlBonus: number;
 }

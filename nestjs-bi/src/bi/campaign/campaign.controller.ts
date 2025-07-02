@@ -1,109 +1,107 @@
-// src/bi/campaign/campaign.controller.ts
-import { Controller, Get, Param, Query, UseGuards, Post, Body, Put, Delete } from '@nestjs/common';
-import { JwtGuard } from 'src/auth/jwt.guard';
-import { UserDeactivatedGuard } from 'src/auth/user-status/user-status.guard';
-import { CampaignTypeOrmService } from './campaign.typeorm.service';
+/*
+Recebe as requisições do frontend e chama o service para
+processar as informações e retornar as respostas 
+para o frontend
+*/
 
-@UseGuards(JwtGuard, UserDeactivatedGuard)
-@Controller(['bi/campaign'])
-export class CampaignController {
-  constructor(private campaignService: CampaignTypeOrmService) {}
+import { Controller, Get, Param, UseGuards, ParseIntPipe } from "@nestjs/common";
+import { CampaignService } from './campaign.service'; // <-- import
+import { CampaignRevenueDTO, CampaignVendorDTO, CampaignProductDTO, ProductVendorDTO } from "./campaign.repository";
+import { CadCampanhaEntity } from "src/database/entity/tenant/cad_campanha.entity";
 
-  // Buscar lista de campanhas com dados para o gráfico principal
+// @UseGuards(JwtGuard, UserDeactivatedGuard)
+// @CheckUserRoles(UserRoles.sales_revenue)
+@Controller('/bi/sales/campaign')
+export class CampaignController { // --> export
+  constructor(
+    private readonly campaignService: CampaignService
+  ) {}
+
+  /**
+   * GET /bi/sales/campaign
+   * Retorna todas as campanhas - Gráfico principal de campanhas
+   */
   @Get()
-  async getCampaignList(): Promise<any[]> {
-    return await this.campaignService.getAllCampaigns();
+  async getAllCampaigns(): Promise<CampaignRevenueDTO[]> {
+    try {
+      const campaigns = await this.campaignService.getAllCampaigns();
+      return campaigns;
+    } catch (error) {
+      throw error;
+    }
   }
 
-  // Buscar dados de faturamento mensal por equipe
-  @Get('team-revenue')
-  async getTeamMonthlyRevenue(): Promise<any[]> {
-    return await this.campaignService.getTeamMonthlyRevenue();
+  /**
+   * GET /bi/campaign/:campaignId
+   * Retorna uma campanha específica por ID
+   */
+  @Get(':campaignId') // id da campanha que quer buscar
+  async getCampaignById(@Param('campaignId', ParseIntPipe) campaignId: number): Promise<CadCampanhaEntity | undefined> {
+    try {
+      const campaign = await this.campaignService.getCampaignById(campaignId);
+      return campaign;
+    } catch (error) {
+      throw error;
+    }
   }
 
-  // Buscar desempenho de vendedores por equipe
-  @Get('team/:teamId/sellers')
-  async getTeamSellers(@Param('teamId') teamId: number): Promise<any[]> {
-    return await this.campaignService.getSellerMonthlyPerformance(teamId);
-  }
-
-  // Buscar campanha específica por código
-  @Get(':code')
-  async getCampaignByCode(@Param('code') code: number): Promise<any> {
-    return await this.campaignService.getCampaignByCode(code);
-  }
-
-  // Buscar produtos de uma campanha
-  @Get(':code/products')
-  async getCampaignProducts(@Param('code') code: number): Promise<any[]> {
-    return await this.campaignService.getCampaignProducts(code);
-  }
-
-  // Buscar vendedores de uma campanha com desempenho
+  /**
+   * GET /bi/campaign/:campaignId/vendors
+   * Retorna TODOS os vendedores ativos - para o segundo gráfico
+   * Aqui todos os vendedores ativos aparecerão, com revenue 0 para quem não participa da campanha
+   */
   @Get(':campaignId/vendors')
-  async getCampaignVendors(@Param('campaignId') campaignId: number): Promise<any[]> {
-    return await this.campaignService.getCampaignSalesByVendor(campaignId);
+  async getCampaignVendors(@Param('campaignId', ParseIntPipe) campaignId: number): Promise<CampaignVendorDTO[]> {
+    try {
+      const vendors = await this.campaignService.getVendorsByCampaign(campaignId);
+      return vendors;
+    } catch (error) {
+      throw error;
+    }
   }
 
-  // Buscar vendedores por produto específico
+  /**
+   * GET /bi/campaign/:campaignId/products
+   * Retorna produtos da campanha com detalhes por vendedor
+   * Formato: CodigoProduto, NomeProduto, QuantidadeProduto, CodigoVendedor, NomeVendedor
+   */
+  @Get(':campaignId/products')
+  async getCampaignProducts(@Param('campaignId', ParseIntPipe) campaignId: number): Promise<CampaignProductDTO[]> {
+    try {
+      const products = await this.campaignService.getCampaignProducts(campaignId);
+      return products;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * GET /bi/campaign/:campaignId/products/:productId/vendors
+   * Retorna vendedores de um produto específico - para o quarto gráfico
+   * Mostra faturamento e meta de cada vendedor para aquele produto
+   */
   @Get(':campaignId/products/:productId/vendors')
   async getProductVendors(
-    @Param('campaignId') campaignId: number,
-    @Param('productId') productId: number
+    @Param('campaignId', ParseIntPipe) campaignId: number,
+    @Param('productId', ParseIntPipe) productId: number
+  ): Promise<ProductVendorDTO[]> {
+    try {
+      const vendors = await this.campaignService.getProductVendors(campaignId, productId);
+      return vendors;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * GET /bi/sales/campaign/:campaignId/vendor/:vendorId/products
+   * Retorna produtos vendidos e meta por produto para um vendedor na campanha
+   */
+  @Get(':campaignId/vendor/:vendorId/products')
+  async getVendorProducts(
+    @Param('campaignId', ParseIntPipe) campaignId: number,
+    @Param('vendorId', ParseIntPipe) vendorId: number
   ): Promise<any[]> {
-    return await this.campaignService.getProductVendorPerformance(campaignId, productId);
-  }
-
-  // Criar nova campanha
-  @Post()
-  async createCampaign(@Body() campaignData: any): Promise<any> {
-    return await this.campaignService.createCampaign(campaignData);
-  }
-
-  // Atualizar campanha existente
-  @Put(':code')
-  async updateCampaign(@Param('code') code: number, @Body() campaignData: any): Promise<any> {
-    // Você precisará implementar este método no CampaignTypeOrmService
-    return { message: "Funcionalidade a ser implementada" };
-  }
-
-  // Excluir campanha
-  @Delete(':code')
-  async deleteCampaign(@Param('code') code: number): Promise<any> {
-    // Você precisará implementar este método no CampaignTypeOrmService
-    return { message: "Funcionalidade a ser implementada" };
-  }
-
-  // Adicionar produto a uma campanha
-  @Post(':campaignId/products')
-  async addCampaignProduct(
-    @Param('campaignId') campaignId: number, 
-    @Body() productData: any
-  ): Promise<any> {
-    // Você precisará implementar este método no CampaignTypeOrmService
-    return { message: "Funcionalidade a ser implementada" };
-  }
-
-  // Remover produto de uma campanha
-  @Delete(':campaignId/products/:productId')
-  async removeCampaignProduct(
-    @Param('campaignId') campaignId: number,
-    @Param('productId') productId: number
-  ): Promise<any> {
-    // Você precisará implementar este método no CampaignTypeOrmService
-    return { message: "Funcionalidade a ser implementada" };
-  }
-
-  // Adicionar vendedor a uma campanha
-  @Post('vendors')
-  async addCampaignVendor(@Body() vendorData: any): Promise<any> {
-    return { message: "Funcionalidade a ser implementada" };
-  }
-
-  // Remover vendedor de uma campanha
-  @Delete('vendors/:id')
-  async removeCampaignVendor(@Param('id') id: number): Promise<any> {
-    // Você precisará implementar este método no CampaignTypeOrmService
-    return { message: "Funcionalidade a ser implementada" };
+    return this.campaignService.getVendorProductsByCampaign(campaignId, vendorId);
   }
 }

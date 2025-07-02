@@ -17,22 +17,22 @@ import { CampaignModule } from "./campaign/campaign.module";
     CampaignModule
   ],
   providers: [
-    {
-      provide: APP_GUARD,
-      useClass: JwtGuard
-    },
-    {
-      provide: APP_GUARD,
-      useClass: UserDeactivatedGuard
-    },
-    {
-      provide: APP_GUARD,
-      useClass: UserRolesGlobalGuard,
-    },
-    {
-      provide: APP_GUARD,
-      useClass: CheckUserRolesGuard
-    }
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: JwtGuard
+    // },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: UserDeactivatedGuard
+    // },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: UserRolesGlobalGuard,
+    // },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: CheckUserRolesGuard
+    // }
   ]
 })
 export class BIModule {}

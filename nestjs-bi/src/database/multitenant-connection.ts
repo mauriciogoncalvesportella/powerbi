@@ -6,7 +6,7 @@ export class MultitenantConnection {
   }
   constructor (
     public connection: Connection
-  ) { }
+  ) {}
 
   get tenant () {
     return `ten_${this.connection.name}`

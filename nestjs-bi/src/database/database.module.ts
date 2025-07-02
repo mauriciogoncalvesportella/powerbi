@@ -4,6 +4,7 @@ import {DatabaseService} from './database.service';
 import { UnitOfWorkModule } from './unit-of-work/uow.module';
 import MultitenantConnectionProvider from './multitenant-connection.provider';
 
+
 @Global()
 @Module({
   imports: [UnitOfWorkModule],

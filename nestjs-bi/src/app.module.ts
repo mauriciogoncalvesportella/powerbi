@@ -1,4 +1,3 @@
-// src/app.module.ts
 import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -15,7 +14,9 @@ import { BIModule } from './bi/bi.module';
 import { VersionControlMiddleware } from './shared/version-control.middleware';
 import { UserRolesGlobalGuard } from './auth/user-roles/user-roles-global.guard';
 import { UserRolesService } from './auth/user-roles/user-roles.service';
-import { CampaignModule } from './bi/campaign/campaign.module';
+
+// MÓDULO PRINCIPAL DA APLICAÇÃO
+
 
 @Module({
   imports: [
@@ -25,10 +26,10 @@ import { CampaignModule } from './bi/campaign/campaign.module';
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: 'localhost',
-      port: 5432,
-      username: 'admin',
+      port: 5433,
+      username: 'powerbi',
       password: 'admin',
-      database: 'bi',
+      database: 'powerbi',
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: false,
     }),
@@ -38,7 +39,6 @@ import { CampaignModule } from './bi/campaign/campaign.module';
     AuthModule,
     ImportDataModule,
     BIModule,
-    CampaignModule,
   ],
   controllers: [AppController],
   providers: [

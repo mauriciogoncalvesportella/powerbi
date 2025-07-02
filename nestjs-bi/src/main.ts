@@ -16,6 +16,9 @@ async function bootstrap() {
   app.use(json({ limit: '8mb' }));
   app.use(urlencoded({ extended: true, limit: '8mb' }));
   app.setGlobalPrefix('api')
+  app.enableCors({
+    origin: 'http://localhost:8080'
+  })
   await app.listen(3000); // escuta na porta 3000
 }
 bootstrap();

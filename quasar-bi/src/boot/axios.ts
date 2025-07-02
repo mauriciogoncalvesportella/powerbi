@@ -35,6 +35,7 @@ class ApiProvider {
 
   constructor () {
     const jwt = localStorage.getItem('jwt')
+
     if (jwt) {
       this.instance = axios.create({
         baseURL: url,
@@ -65,8 +66,6 @@ class ApiProvider {
       // Adicione o cabeçalho x-tenant-id a todas as requisições
       const tenantId = localStorage.getItem('tenantId') || 'default_tenant';
       request.headers['x-tenant-id'] = tenantId;
-      
-      // Para depuração - remova ou comente em produção
       
       return request
     })
